@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сегментация изображений</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+:root{
+  --ink:#111a24; --deep:#0c141c; --surface:#182432; --surface2:#1f2e3f;
+  --line:#2b3d52; --line-soft:#223244;
+  --text:#e7edf4; --dim:#9dafc2; --faint:#6b8099;
+  --amber:#e0913f; --amber-hi:#f4ac5c; --amber-dim:rgba(224,145,63,.14);
+  --teal:#54b6a4; --rose:#d4705f; --violet:#9a8ac9;
+  --serif:"IBM Plex Serif",Cambria,Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",Tahoma,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--deep);color:var(--text);font-family:var(--sans);margin:0;min-height:100vh;overflow:hidden}
+#fit{position:fixed;width:1280px;height:720px;transform-origin:top left}
+#wrap{position:absolute;inset:0;background:var(--ink);overflow:hidden;box-shadow:0 0 0 1px var(--line-soft),0 30px 80px rgba(0,0,0,.55)}
+.slide{position:absolute;inset:0;padding:40px 60px 60px;display:none;flex-direction:column;gap:12px}
+.slide.on{display:flex;animation:in .32s ease both}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.slide.on .stagger > *{animation:rise .42s ease both}
+.slide.on .stagger > *:nth-child(2){animation-delay:.08s}
+.slide.on .stagger > *:nth-child(3){animation-delay:.16s}
+.slide.on .stagger > *:nth-child(4){animation-delay:.24s}
+.slide.on .stagger > *:nth-child(5){animation-delay:.32s}
+.slide.on .stagger > *:nth-child(6){animation-delay:.40s}
+@media (prefers-reduced-motion:reduce){.slide.on,.slide.on .stagger > *{animation:none!important}}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);display:flex;align-items:center;gap:14px;flex:none}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--serif);font-size:40px;line-height:1.08;margin:0;font-weight:600;text-wrap:balance;flex:none}
+h1.big{font-size:64px}
+.sub{font-size:16.5px;color:var(--dim);line-height:1.5;max-width:90ch;margin:0;flex:none}
+.foot{position:absolute;left:60px;right:60px;bottom:20px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.14em;text-transform:uppercase}
+.kicker{background:var(--amber-dim);border-left:3px solid var(--amber);padding:10px 16px;font-size:15.5px;line-height:1.45;color:#f0dcc4;flex:none}
+.kicker b{color:var(--amber-hi);font-weight:600}
+.kicker.teal{background:rgba(84,182,164,.12);border-left-color:var(--teal);color:#cfe8e2}.kicker.teal b{color:var(--teal)}
+.kicker.rose{background:rgba(212,112,95,.12);border-left-color:var(--rose);color:#efd2cc}.kicker.rose b{color:var(--rose)}
+.cols{display:grid;gap:14px;min-height:0}
+.grow{flex:1;min-height:0}
+.c2{grid-template-columns:1fr 1fr}.c2n{grid-template-columns:1fr 1.25fr}.c2w{grid-template-columns:1.25fr 1fr}.c3{grid-template-columns:repeat(3,1fr)}.c4{grid-template-columns:repeat(4,1fr)}
+.panel{background:var(--surface);border:1px solid var(--line-soft);padding:13px 16px;display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+.panel h3{margin:0;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);flex:none}
+.panel h3.t{color:var(--teal)}.panel h3.v{color:var(--violet)}.panel h3.r{color:var(--rose)}
+.panel p{margin:0;font-size:14.5px;line-height:1.5;color:var(--dim)}
+.panel strong{color:var(--text);font-weight:600}
+ul.list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+ul.list li{font-size:14.5px;line-height:1.4;padding-left:22px;position:relative;color:var(--text)}
+ul.list li::before{content:"";position:absolute;left:4px;top:.55em;width:7px;height:7px;background:var(--amber);transform:rotate(45deg)}
+.small{font-size:13px;line-height:1.45}.dim{color:var(--dim)}
+pre{font-family:var(--mono);font-size:13px;line-height:1.5;margin:0;background:var(--deep);border:1px solid var(--line-soft);padding:9px 12px;overflow:auto;color:#dbe6f0;white-space:pre;flex:none}
+pre .k,.codex .k{color:var(--violet)}pre .s,.codex .s{color:var(--teal)}pre .c,.codex .c{color:var(--faint);font-style:italic}pre .n,.codex .n{color:var(--amber-hi)}
+code{font-family:var(--mono);font-size:.92em;color:var(--amber-hi)}
+button{font-family:var(--sans);cursor:pointer;border:1px solid var(--line);background:var(--surface2);color:var(--text);font-size:14px;padding:7px 13px;transition:.15s}
+button:hover{border-color:var(--amber);color:var(--amber-hi)}
+button.on{border-color:var(--amber);background:var(--amber-dim);color:var(--amber-hi)}
+.rowbtn{display:flex;gap:9px;align-items:center;flex-wrap:wrap;flex:none}
+.verdict{font-family:var(--mono);font-size:13px;color:var(--dim);min-height:18px;flex:none;line-height:1.4}
+.verdict.good{color:var(--teal)}.verdict.bad{color:var(--rose)}
+input[type=range]{accent-color:var(--amber)}
+canvas{display:block;flex:none;max-width:100%;height:auto!important}
+.codex{font-family:var(--mono);font-size:13px;line-height:1.52;background:var(--deep);border:1px solid var(--line-soft);padding:7px 0;overflow:auto;min-height:0;color:#dbe6f0}
+.codex .cl{white-space:pre;padding:0 12px;border-left:3px solid transparent;min-height:1.52em}
+.codex .cl.has{cursor:pointer;border-left-color:var(--line)}
+.codex .cl.has:hover{background:rgba(255,255,255,.035)}
+.codex .cl.sel{background:var(--amber-dim);border-left-color:var(--amber)}
+.note{background:var(--surface2);border:1px solid var(--line);padding:10px 14px;font-size:15px;line-height:1.5;color:var(--text);min-height:74px;flex:none}
+.note code{font-size:.9em}
+.hint{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.08em;flex:none}
+.map{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.mblk{background:var(--surface);border:1px solid var(--line-soft);padding:13px;display:flex;flex-direction:column;gap:5px;transition:.3s;min-height:150px}
+.mblk .no{font-family:var(--mono);font-size:12px;color:var(--amber)}
+.mblk b{font-size:17px;font-weight:600}
+.mblk span{font-size:13.5px;color:var(--dim);line-height:1.4}
+.mblk .tp{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:auto}
+.mblk.on{border-color:var(--amber);background:var(--amber-dim);transform:translateY(-4px)}
+.pipe{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
+.pbox{background:var(--deep);border:1px solid var(--line);padding:8px 12px;min-width:160px;text-align:center}
+.pbox small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
+.pbox b{display:block;font-family:var(--mono);font-size:26px;color:var(--amber-hi);font-weight:500}
+.pbox span{font-size:12px;color:var(--dim);font-family:var(--mono)}
+.parrow{font-family:var(--mono);font-size:12px;color:var(--dim);text-align:center;line-height:1.3}
+.exrow{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center}
+.exrow .who b{display:block;font-size:15px}.exrow .who span{font-size:12.5px;color:var(--dim)}
+.xbar{position:relative;height:25px;background:var(--deep);border:1px solid var(--line-soft);margin:3px 0}
+.xbar i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(84,182,164,.45);transition:width .9s}
+.xbar i.bad{background:rgba(212,112,95,.5)}
+.xbar em{position:absolute;left:8px;top:3px;font-size:12.5px;font-style:normal;color:var(--text)}
+.xbar span{position:absolute;right:8px;top:3px;font-family:var(--mono);font-size:12.5px}
+.cells{display:flex;gap:6px;flex:none}
+.cell{width:54px;height:46px;display:grid;place-items:center;font-family:var(--mono);font-size:14px;border:1px solid var(--line)}
+table.tt{border-collapse:collapse;font-family:var(--mono);font-size:12px}
+.tt td{width:36px;height:30px;text-align:center;border:1px solid var(--line-soft)}
+.tt th{font-weight:400;color:var(--faint);text-align:left;padding-right:8px;font-size:11px;white-space:nowrap}
+.readout{font-family:var(--mono);font-size:15px;color:var(--amber-hi)}
+</style>
+</head>
+<body>
+<div id="fit"><div id="wrap">
+
+
+<style>
+/* ===== компоненты: берите нужные, лишние можно удалить ===== */
+.out{font-family:var(--mono);font-size:12.5px;line-height:1.45;background:#0a1118;border:1px solid var(--line-soft);border-left:3px solid var(--teal);padding:9px 12px;color:#bcd3cb;white-space:pre;overflow:auto;flex:none}
+.out b{color:var(--teal);font-weight:500}.out i{color:var(--rose);font-style:normal}
+.pipbox{background:rgba(224,145,63,.1);border:1px solid var(--amber);border-left-width:4px;padding:10px 14px;display:flex;flex-direction:column;gap:6px;flex:none}
+.pipbox .cmd{font-family:var(--mono);font-size:17px;color:var(--amber-hi)}
+.pipbox .what{font-size:13.5px;color:var(--dim);line-height:1.45}.pipbox .what b{color:var(--text);font-weight:600}
+.formula{background:var(--deep);border:1px solid var(--line);padding:13px 18px;font-family:var(--mono);font-size:18px;color:var(--text);text-align:center;line-height:1.7;flex:none}
+.formula em{font-style:normal;color:var(--amber-hi)}.formula s{text-decoration:none;color:var(--teal)}
+.term{background:var(--surface2);border:1px solid var(--line);padding:9px 13px;display:flex;flex-direction:column;gap:2px}
+.term b{font-size:15px;color:var(--amber-hi)}.term span{font-size:13.5px;color:var(--dim);line-height:1.4}
+.anat{font-family:var(--mono);font-size:16.5px;background:var(--deep);border:1px solid var(--line);padding:14px 16px;line-height:2.2;flex:none}
+.anat .tk{padding:3px 6px;border-bottom:2px dashed var(--line);cursor:pointer;transition:.15s}
+.anat .tk:hover{background:rgba(255,255,255,.06)}
+.anat .tk.on{background:var(--amber-dim);border-bottom-color:var(--amber);color:var(--amber-hi)}
+.anatnote{background:var(--surface2);border:1px solid var(--line);padding:11px 14px;font-size:15px;line-height:1.5;color:var(--text);flex:1;min-height:0}
+.anatnote b{color:var(--amber-hi)}
+.anatnote .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--teal);display:block;margin-bottom:4px}
+.lines{font-family:var(--mono);font-size:13.5px;line-height:1.75;background:var(--deep);border:1px solid var(--line-soft);padding:10px 12px;color:#dbe6f0;white-space:pre;overflow:auto;min-height:0}
+.lines .ln{display:block;padding:0 6px;border-left:3px solid transparent}
+.lines .ln.on{background:var(--amber-dim);border-left-color:var(--amber)}
+.step{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--teal);padding:11px 14px;display:flex;flex-direction:column;gap:7px;min-height:0;min-width:0}
+.step .num{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--teal)}
+.step h4{margin:0;font-size:16.5px;color:var(--text);font-weight:600}
+.step p{margin:0;font-size:14.5px;color:var(--dim);line-height:1.45}
+.step .exp{font-family:var(--mono);font-size:12.5px;color:#bcd3cb;background:#0a1118;border:1px solid var(--line-soft);padding:6px 9px;white-space:pre;overflow:auto}
+.step .hint{display:none;font-size:13px;color:var(--faint);line-height:1.4;border-top:1px dashed var(--line);padding-top:6px}
+.step .hint.on{display:block}
+.cols > *{min-width:0}
+.qgrid{display:flex;flex-direction:column;gap:6px;min-height:0}
+.qrow{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line-soft);padding:6px 10px}
+.qrow .txt{flex:1;font-family:var(--mono);font-size:13px;line-height:1.4;color:var(--text);min-width:0;white-space:pre-wrap}
+.qrow .why{display:none;font-family:var(--sans);font-size:12.5px;color:var(--faint);margin-top:3px;white-space:normal}.qrow .why.on{display:block}
+.qbtn{font-family:var(--mono);font-size:11.5px;padding:5px 8px;flex:none}
+.qbtn.on{border-color:var(--amber);background:var(--amber-dim);color:var(--amber-hi)}
+.qrow.ok{border-color:var(--teal)}.qrow.no{border-color:var(--rose)}
+.olist{display:flex;flex-direction:column;gap:6px}
+.ostep{display:flex;align-items:center;gap:12px;text-align:left;font-family:var(--mono);font-size:14px;padding:7px 14px}
+.ostep .oi{width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--line);color:var(--faint);flex:none}
+.ostep.on .oi{border-color:var(--amber);color:var(--amber-hi)}
+.ostep.ok{border-color:var(--teal)}.ostep.no{border-color:var(--rose)}
+.ostep em{margin-left:auto;font-style:normal;font-size:12.5px;color:var(--rose);font-family:var(--sans)}
+.gridin{display:grid;gap:4px}
+.gridin input{width:58px;height:46px;font-family:var(--mono);font-size:17px;text-align:center;background:var(--deep);color:var(--amber-hi);border:1px solid var(--line)}
+.gridin input.ok{border-color:var(--teal);background:rgba(84,182,164,.15)}
+.gridin input.no{border-color:var(--rose);background:rgba(212,112,95,.15)}
+.slrow{display:grid;grid-template-columns:118px 1fr 52px;gap:10px;align-items:center;font-family:var(--mono);font-size:13px}
+.slrow span:last-child{color:var(--amber-hi);text-align:right}
+.warn{font-family:var(--mono);font-size:12px;color:var(--rose);letter-spacing:.06em}
+/* запрет копирования кода со слайдов — включайте, когда студенты должны набирать руками
+#wrap{user-select:none}
+#wrap input,#wrap textarea{user-select:text}
+*/
+</style>
+
+<style>
+.seg3{display:flex;gap:8px}
+.mx{font-family:var(--mono);font-size:11px;line-height:1.25;color:var(--faint);white-space:pre;background:var(--deep);border:1px solid var(--line-soft);padding:8px 10px;flex:none}
+.mx b{color:var(--rose);font-weight:600}
+.arch{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.arch .panel p{font-size:13.5px}
+table.cmp{border-collapse:collapse;width:100%;font-size:14px}
+.cmp th{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+.cmp td{padding:7px 10px;border-bottom:1px solid var(--line-soft);color:var(--dim);vertical-align:top}
+.cmp td:first-child{color:var(--text)}
+.cmp code{font-size:12.5px}
+.pics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pics img{width:100%;display:block;border:1px solid var(--line-soft)}
+.pics span{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center}
+.bgpick{display:flex;gap:6px}
+</style>
+
+<!-- ======================= 01 · ТИТУЛ ======================= -->
+<section class="slide" id="s1" data-sec="Начало">
+  <div class="eyebrow">Machine Learning · сегментация изображений</div>
+  <div class="cols grow" style="grid-template-columns:1fr 470px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h1 class="big">Сегментация<br>изображений</h1>
+      <div style="font-family:var(--serif);font-size:23px;line-height:1.4;color:var(--amber-hi)">Учим сеть отвечать не «что на фото», а «какие пиксели — самолёт»</div>
+      <div class="sub">Разбор ДЗ · виды сегментации · архитектура U-Net · метрика IoU · практика на PyTorch: сегментация самолётов.</div>
+      <div style="display:flex;gap:28px;font-family:var(--mono);font-size:12.5px;color:var(--faint);letter-spacing:.1em"><span>ИБРАХИМ · ПРЕПОДАВАТЕЛЬ</span><span>5 БЛОКОВ ПРАКТИКИ · 2 ДЗ</span></div>
+    </div>
+    <canvas id="tiCv" width="460" height="300"></canvas>
+  </div>
+</section>
+
+<!-- ======================= 02 · РАЗБОР ДЗ 1 ======================= -->
+<section class="slide" id="s2" data-sec="Разбор ДЗ">
+  <div class="eyebrow">Разбор ДЗ · «Разделить выборку на обучающую и проверочную»</div>
+  <h1>Шаги 1–2: деление и модель под 128 × 128</h1>
+  <div class="cols grow" style="grid-template-columns:1.2fr 1fr">
+    <div class="panel">
+      <h3>Нажимайте на строки</h3>
+      <div class="lines grow" id="hwLines"></div>
+      <div class="rowbtn"><button id="hwStep">Следующая строка</button></div>
+    </div>
+    <div class="panel">
+      <h3 class="t">Что делает строка</h3>
+      <div class="anatnote" id="hwLinesNote" style="flex:none;min-height:150px"></div>
+      <div class="kicker">Поменяли размер картинки — <b>пересчитываем вход Linear</b> и <b>пересоздаём загрузчики</b>. Это две главные ошибки в работах.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 03 · РАЗБОР ДЗ 2 ======================= -->
+<section class="slide" id="s3" data-sec="Разбор ДЗ">
+  <div class="eyebrow">Разбор ДЗ · шаги 3–6</div>
+  <h1>Чекпоинты, лучший файл, два дообучения</h1>
+  <div class="cols c3 grow stagger">
+    <div class="panel"><h3>Шаг 3 · чекпоинты</h3>
+      <ul class="list"><li>Новый шаблон имени: <code>flowers128-…</code>, иначе файлы смешаются с весами 96 × 96</li><li><code>checkpoint</code> сохраняет <b>каждую</b> эпоху</li><li>15 эпох → 15 файлов</li></ul></div>
+    <div class="panel"><h3 class="t">Шаг 4 · лучший — из файлов</h3>
+      <ul class="list"><li>Число в конце имени — <code>val_loss</code></li><li><code>min(files, key=loss_from_name)</code></li><li>Загружаем и <b>проверяем</b> точность — она должна совпасть с той эпохой</li></ul></div>
+    <div class="panel"><h3 class="v">Шаги 5–6 · дообучение</h3>
+      <ul class="list"><li><code>lr</code> каждый раз в 10 раз меньше: 1e-4, потом 1e-5</li><li>Перед вторым дообучением лучший файл <b>ищем заново</b></li><li>Вывод своими словами: где началось переобучение</li></ul></div>
+  </div>
+  <div class="kicker rose">Самая частая ошибка: <b>model = make_model()</b> перед дообучением — сеть начинает с нуля, и «дообучение» становится просто коротким обучением.</div>
+</section>
+
+<!-- ======================= 04 · ИНТУИЦИЯ: ТРИ ЗАДАЧИ ======================= -->
+<section class="slide" id="s4" data-sec="Интуиция">
+  <div class="eyebrow">Сначала интуиция · три вопроса к одной картинке</div>
+  <h1>Что? Где примерно? Какие именно пиксели?</h1>
+  <div class="cols grow" style="grid-template-columns:1.35fr 1fr">
+    <div class="panel">
+      <canvas id="taskCv" width="640" height="330"></canvas>
+      <div class="rowbtn seg3"><button id="tk0" class="on">Классификация</button><button id="tk1">Детекция</button><button id="tk2">Сегментация</button></div>
+    </div>
+    <div class="panel">
+      <div class="term" id="taskTerm"></div>
+      <ul class="list">
+        <li><b>Классификация</b> — один ответ на всю картинку (это мы уже умеем)</li>
+        <li><b>Детекция</b> — прямоугольник вокруг объекта</li>
+        <li><b>Сегментация</b> — ответ <b>для каждого пикселя</b>: самолёт или фон</li>
+      </ul>
+      <div class="kicker"><b>Сегментация = классификация каждого пикселя.</b> На выходе не число, а картинка-маска того же размера.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 05 · МАСКА ======================= -->
+<section class="slide" id="s5" data-sec="Маска">
+  <div class="eyebrow">Маска · картинка из нулей и единиц</div>
+  <h1>Маска — это ответ, который мы учим сеть рисовать</h1>
+  <div class="sub">Нажимайте на клетки: покрасьте самолёт. Справа — то же самое числами, именно так маска лежит в памяти.</div>
+  <div class="cols grow" style="grid-template-columns:auto auto 1fr;align-items:start">
+    <div class="panel"><canvas id="gridCv" width="400" height="225"></canvas>
+      <div class="rowbtn"><button id="gridFill">Правильный ответ</button><button id="gridClear">Очистить</button></div></div>
+    <div class="mx" id="gridMx"></div>
+    <div class="panel">
+      <h3 class="t">Что запомнить</h3>
+      <ul class="list">
+        <li>1 — самолёт, 0 — фон. Размер маски = размер фото</li>
+        <li>Классов больше двух — в клетке номер класса (0 фон, 1 дорога, 2 машина…)</li>
+        <li>В нашем датасете маска — <b>красная</b> картинка в JPG; превращаем в 0/1 порогом</li>
+      </ul>
+      <div class="readout" id="gridInfo"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 06 · ВИДЫ ======================= -->
+<section class="slide" id="s6" data-sec="Виды сегментации">
+  <div class="eyebrow">Виды сегментации · и где их применяют</div>
+  <h1>Семантическая, по экземплярам, паноптическая</h1>
+  <div class="cols grow" style="grid-template-columns:1.25fr 1fr">
+    <div class="panel">
+      <canvas id="kindCv" width="600" height="300"></canvas>
+      <div class="rowbtn seg3"><button id="kd0" class="on">Семантическая</button><button id="kd1">По экземплярам</button><button id="kd2">Паноптическая</button></div>
+    </div>
+    <div class="panel">
+      <div class="term" id="kindTerm"></div>
+      <h3 class="t">Где применяют</h3>
+      <ul class="list">
+        <li>Беспилотники: дорога, разметка, пешеходы</li>
+        <li>Медицина: опухоль на снимке МРТ, контуры органов</li>
+        <li>Фото и видео: «удалить фон», размытие в видеозвонке</li>
+        <li>Спутники: поля, дома, вырубка леса</li>
+      </ul>
+      <div class="kicker teal">Сегодня — <b>семантическая</b> с одним классом: самолёт / фон.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 07 · ЭНКОДЕР–ДЕКОДЕР ======================= -->
+<section class="slide" id="s7" data-sec="Энкодер–декодер">
+  <div class="eyebrow">Почему не подходит обычная CNN</div>
+  <h1>Классификатор сжимает. Сегментатору нужно развернуть обратно</h1>
+  <div class="cols grow" style="grid-template-columns:1.5fr 1fr">
+    <div class="panel">
+      <canvas id="edCv" width="700" height="330"></canvas>
+      <div class="rowbtn"><button id="edA" class="on">Классификатор</button><button id="edB">Энкодер–декодер</button></div>
+    </div>
+    <div class="panel">
+      <div class="term"><b>Энкодер</b><span>спуск: свёртки + MaxPool. Картинка меньше, каналов больше. Сеть понимает <b>что</b> на фото.</span></div>
+      <div class="term"><b>Декодер</b><span>подъём: увеличение в 2 раза + свёртки. Сеть восстанавливает <b>где</b> это.</span></div>
+      <div class="kicker">Выход декодера — <b>того же размера, что вход</b>, 1 канал: «насколько этот пиксель — самолёт».</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 08 · U-NET ======================= -->
+<section class="slide" id="s8" data-sec="U-Net">
+  <div class="eyebrow">Архитектура U-Net · наша сеть на занятии</div>
+  <h1>Буква U: спуск, дно, подъём и мостики</h1>
+  <div class="cols grow" style="grid-template-columns:1.55fr 1fr">
+    <div class="panel">
+      <canvas id="unetCv" width="660" height="370"></canvas>
+    </div>
+    <div class="panel">
+      <div class="rowbtn"><button id="un0" class="on">Спуск</button><button id="un1">Дно</button><button id="un2">Подъём</button><button id="un3">Мостики</button></div>
+      <div class="anatnote" id="unetNote"></div>
+      <div class="kicker teal">Мостики (skip connections) — главная идея U-Net: <b>детали со спуска сразу попадают на подъём</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 09 · ЗАЧЕМ МОСТИКИ ======================= -->
+<section class="slide" id="s9" data-sec="Мостики">
+  <div class="eyebrow">Зачем мостики · что видно на дне</div>
+  <h1>На дне сеть видит самолёт размером 32 × 18</h1>
+  <div class="cols grow" style="grid-template-columns:1.3fr 1fr">
+    <div class="panel">
+      <canvas id="resCv" width="600" height="300"></canvas>
+      <div class="slrow"><span>разрешение</span><input type="range" id="resR" min="0" max="3" step="1" value="3"><span id="resV"></span></div>
+    </div>
+    <div class="panel">
+      <ul class="list">
+        <li>Двигайте ползунок: так выглядит маска на каждом уровне спуска</li>
+        <li>Если декодер увеличит маску 32 × 18 обратно — получатся «ступеньки» вместо крыльев</li>
+        <li>Мостик отдаёт декодеру карту 256 × 144 со спуска — там края ещё чёткие</li>
+      </ul>
+      <div class="kicker">Дно знает, <b>что</b> это самолёт. Мостики помнят, <b>где проходит край</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 10 · СЧЁТ РАЗМЕРОВ ======================= -->
+<section class="slide" id="s10" data-sec="Считаем руками">
+  <div class="eyebrow">Практика · считаем размеры руками</div>
+  <h1>Какой размер на каждом уровне?</h1>
+  <div class="cols grow" style="grid-template-columns:1fr 1.1fr;align-items:start">
+    <div class="panel"><h3>Дано</h3>
+<pre style="font-size:14.5px">вход:  <span class="n">3</span> × <span class="n">144</span> × <span class="n">256</span>   (каналы × высота × ширина)
+enc1:  <span class="n">16</span> каналов, размер тот же
+pool → enc2: <span class="n">32</span> канала
+pool → enc3: <span class="n">64</span> канала
+pool → дно:  <span class="n">128</span> каналов
+up3:   ConvTranspose2d(<span class="n">128</span>, <span class="n">64</span>, <span class="n">2</span>, stride=<span class="n">2</span>)
+dec3 = conv_block( ?, <span class="n">64</span>)</pre>
+      <p>MaxPool2d(2) делит высоту и ширину на 2, ConvTranspose2d(…, 2, stride=2) — умножает на 2. <code>padding=1</code> размер не меняет.</p>
+    </div>
+    <div class="panel">
+      <h3 class="t">Ваши ответы</h3>
+      <div style="display:flex;gap:14px">
+        <div style="display:grid;grid-template-rows:repeat(4,46px);gap:4px;font-size:14px;color:var(--dim)">
+          <span style="align-self:center"><b style="color:var(--text)">enc2</b> · высота, ширина</span>
+          <span style="align-self:center"><b style="color:var(--text)">enc3</b> · высота, ширина</span>
+          <span style="align-self:center"><b style="color:var(--text)">дно</b> · высота, ширина</span>
+          <span style="align-self:center"><b style="color:var(--text)">dec3</b> · каналов на входе;<br>во сколько раз дно меньше входа</span>
+        </div>
+        <div class="gridin" id="calc1" style="grid-template-columns:repeat(2,58px)"></div>
+      </div>
+      <div class="rowbtn"><button id="calc1check">Проверить</button><button id="calc1reset">Сбросить</button><div class="verdict" id="calc1v"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 11 · ДРУГИЕ АРХИТЕКТУРЫ ======================= -->
+<section class="slide" id="s11" data-sec="Архитектуры">
+  <div class="eyebrow">Другие архитектуры · кратко</div>
+  <h1>U-Net — не единственная</h1>
+  <div class="arch grow stagger">
+    <div class="panel"><h3>FCN · 2015</h3><canvas id="ar0" width="250" height="120"></canvas><p>Первая «полностью свёрточная»: классификатор без Linear, в конце одно большое увеличение. Края грубые.</p></div>
+    <div class="panel"><h3 class="t">U-Net · 2015</h3><canvas id="ar1" width="250" height="120"></canvas><p>Симметричный подъём + мостики на каждом уровне. Придумана для медицинских снимков, учится на сотнях картинок.</p></div>
+    <div class="panel"><h3 class="v">U-Net++ · 2018</h3><canvas id="ar2" width="250" height="120"></canvas><p>«U-Net Plus»: мостики не прямые, а через промежуточные блоки. Точнее, но тяжелее.</p></div>
+    <div class="panel"><h3 class="r">PSPNet · 2017</h3><canvas id="ar3" width="250" height="120"></canvas><p>Пирамида пулингов: смотрит на картинку сразу в 4 масштабах — видит и деталь, и всю сцену.</p></div>
+  </div>
+  <div class="kicker">Все они — энкодер + декодер. Различаются тем, <b>как детали со спуска попадают на подъём</b>.</div>
+</section>
+
+<!-- ======================= 12 · МЕТРИКА ======================= -->
+<section class="slide" id="s12" data-sec="Метрика IoU">
+  <div class="eyebrow">Метрика · почему не accuracy</div>
+  <h1>IoU: пересечение делить на объединение</h1>
+  <div class="cols grow" style="grid-template-columns:1.25fr 1fr">
+    <div class="panel">
+      <canvas id="iouCv" width="580" height="250"></canvas>
+      <div class="slrow"><span>сдвиг</span><input type="range" id="iouS" min="-120" max="120" value="40"><span id="iouSv"></span></div>
+      <div class="slrow"><span>размер</span><input type="range" id="iouZ" min="0" max="160" value="100"><span id="iouZv"></span></div>
+    </div>
+    <div class="panel">
+      <div class="formula">IoU = <em>пересечение</em> / <s>объединение</s></div>
+      <div class="out" id="iouOut"></div>
+      <div class="kicker rose">В нашем датасете самолёт — около <b>12.7 %</b> пикселей. Сеть «всё фон» получает accuracy <b>87.3 %</b> и IoU <b>0</b>. Поставьте размер на 0 и проверьте.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 13 · KERAS / PYTORCH ======================= -->
+<section class="slide" id="s13" data-sec="Keras → PyTorch">
+  <div class="eyebrow">Методичка на Keras · мы пишем на PyTorch</div>
+  <h1>Те же слои, другие имена</h1>
+  <div class="panel grow">
+    <table class="cmp">
+      <tr><th>что делает</th><th>PyTorch (у нас)</th><th>Keras (методичка LXP)</th></tr>
+      <tr><td>свёртка, размер не меняется</td><td><code>nn.Conv2d(cin, cout, 3, padding=1)</code></td><td><code>Conv2D(cout, 3, padding='same')</code></td></tr>
+      <tr><td>нормализация</td><td><code>nn.BatchNorm2d(c)</code></td><td><code>BatchNormalization()</code></td></tr>
+      <tr><td>уменьшить в 2 раза</td><td><code>nn.MaxPool2d(2)</code></td><td><code>MaxPooling2D(2)</code></td></tr>
+      <tr><td>увеличить в 2 раза</td><td><code>nn.ConvTranspose2d(cin, cout, 2, stride=2)</code></td><td><code>Conv2DTranspose(cout, 2, strides=2)</code></td></tr>
+      <tr><td>склеить мостик</td><td><code>torch.cat([a, b], dim=1)</code></td><td><code>concatenate([a, b])</code></td></tr>
+      <tr><td>выход «самолёт / фон»</td><td><code>nn.Conv2d(16, 1, 1)</code> + <code>BCEWithLogitsLoss</code></td><td><code>Conv2D(1, 1, activation='sigmoid')</code> + <code>binary_crossentropy</code></td></tr>
+      <tr><td>порядок осей</td><td><code>(N, C, H, W)</code> — каналы вторые</td><td><code>(N, H, W, C)</code> — каналы последние</td></tr>
+    </table>
+  </div>
+  <div class="kicker">Из-за порядка осей склеиваем по <b>dim=1</b> — это ось каналов. В Keras по умолчанию последняя ось.</div>
+</section>
+
+<!-- ======================= 14 · РАЗБОР КОДА ======================= -->
+<section class="slide" id="s14" data-sec="Разбор кода">
+  <div class="eyebrow">Разбор кода · U-Net на PyTorch</div>
+  <h1>Вся сеть — 30 строк</h1>
+  <div class="cols grow" style="grid-template-columns:1.25fr 1fr">
+    <div class="codex grow" id="unetCode"></div>
+    <div class="panel">
+      <h3 class="t">Нажимайте на строки</h3>
+      <div class="note" id="unetCodeNote" style="min-height:150px"></div>
+      <div class="out">model(torch.zeros(2, 3, 144, 256), show=True)
+вход   (2, 3, 144, 256)
+e1     (2, 16, 144, 256)
+e2     (2, 32, 72, 128)
+e3     (2, 64, 36, 64)
+дно    (2, 128, 18, 32)
+d3     (2, 64, 36, 64)
+d2     (2, 32, 72, 128)
+d1     (2, 16, 144, 256)
+<b>выход  (2, 1, 144, 256)</b>
+параметров: <b>483441</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 15 · ОБУЧЕНИЕ ======================= -->
+<section class="slide" id="s15" data-sec="Обучение">
+  <div class="eyebrow">Обучение · что нового по сравнению с классификацией</div>
+  <h1>Тот же цикл обучения, три отличия</h1>
+  <div class="cols c3 grow stagger">
+    <div class="panel"><h3>Ошибка</h3><p><code>BCEWithLogitsLoss</code> — бинарная кросс-энтропия <strong>для каждого пикселя</strong>, потом среднее. Sigmoid она делает сама, поэтому в модели последний слой без активации.</p></div>
+    <div class="panel"><h3 class="t">Метрика</h3><p>После каждой эпохи — <strong>IoU на проверке</strong>. Пиксель считаем самолётом, если <code>logit &gt; 0</code> (то же, что sigmoid &gt; 0.5). Веса сохраняем, когда IoU стал лучшим.</p></div>
+    <div class="panel"><h3 class="v">Аугментация</h3><p>С вероятностью 50 % отражаем пачку по горизонтали — <strong>и фото, и маску</strong>: <code>torch.flip(…, dims=[3])</code>. Самолёт, летящий влево, — тоже самолёт.</p></div>
+  </div>
+  <div class="kicker">Ориентир (примерные значения): на T4 — 5–10 с на эпоху, IoU на проверке к 20-й эпохе — около 0.75–0.85. Точные числа будут в вашем запуске.</div>
+</section>
+
+<!-- ======================= 17 · ОШИБКИ ======================= -->
+<section class="slide" id="s17" data-sec="Частые ошибки">
+  <div class="eyebrow">Частые ошибки</div>
+  <h1>Что ломается и как чинить</h1>
+  <div class="cols c2 grow stagger">
+    <div class="panel"><h3 class="r">Sizes of tensors must match</h3><p>Высота или ширина не делится на 8 — после спуска и подъёма потерялся пиксель, мостик не склеивается.</p><p><strong>Чиним:</strong> размер кратен 2<sup>уровней</sup>: 256 × 144, 128 × 128.</p></div>
+    <div class="panel"><h3 class="r">Маска пустая, IoU ≈ 0</h3><p>Сравнили с <code>== 255</code>, а JPG сохранил 254, 250…</p><p><strong>Чиним:</strong> порог <code>канал &gt; 127</code>.</p></div>
+    <div class="panel"><h3 class="r">expected 128 channels, got 64</h3><p>Забыли, что после <code>torch.cat</code> каналов вдвое больше.</p><p><strong>Чиним:</strong> вход dec-блока = каналы up + каналы мостика.</p></div>
+    <div class="panel"><h3 class="r">Отразили только фото</h3><p>Аугментация без маски: самолёт слева, а ответ справа. Сеть учится ерунде.</p><p><strong>Чиним:</strong> <code>flip</code> и для <code>xb</code>, и для <code>yb</code>.</p></div>
+  </div>
+</section>
+
+<!-- ======================= 18 · ПОРЯДОК ======================= -->
+<section class="slide" id="s18" data-sec="Практика">
+  <div class="eyebrow">Практика · порядок</div>
+  <h1>Расставьте шаги практики по порядку</h1>
+  <div class="sub">Нажимайте на строки в том порядке, в котором они выполняются в ноутбуке.</div>
+  <div class="olist grow" id="ord1"></div>
+  <div class="rowbtn"><button id="ord1check">Проверить</button><button id="ord1reset">Сбросить</button><div class="verdict" id="ord1v"></div></div>
+</section>
+
+<!-- ======================= 19 · ПРАКТИКА 1–3 ======================= -->
+<section class="slide" id="s19" data-sec="Практика">
+  <div class="eyebrow">Практика · блоки 1–3 · разбираем вместе</div>
+  <h1>Данные и сеть</h1>
+  <div class="cols c3 grow" id="pr1"></div>
+  <div class="rowbtn"><button data-hint="pr1">Показать подсказки</button><span class="small dim">Ноутбук «segmentaciya-unet-colab», блоки 1–3.</span></div>
+</section>
+
+<!-- ======================= 20 · ПРАКТИКА 4–5 ======================= -->
+<section class="slide" id="s20" data-sec="Практика">
+  <div class="eyebrow">Практика · блоки 4–5 · разбираем вместе</div>
+  <h1>Обучение и разбор ошибок сети</h1>
+  <div class="cols c3 grow" id="pr2"></div>
+  <div class="rowbtn"><button data-hint="pr2">Показать подсказки</button><span class="small dim">Ноутбук, блоки 4–5. Среда выполнения — T4 GPU.</span></div>
+</section>
+
+<!-- ======================= 21 · ДЗ 1 ======================= -->
+<section class="slide" id="s21" data-sec="Домашнее задание">
+  <div class="eyebrow">Домашнее задание LXP №1 · 2 балла</div>
+  <h1>«Почистить базу самолётов»</h1>
+  <div class="cols c2n grow">
+    <div class="panel">
+      <h3>Зачем</h3>
+      <p>В датасете есть пары, где маска <strong>не совпадает</strong> с самолётом. На них сеть учится неправильному — и их надо найти.</p>
+      <h3 class="t">Подсказка от сети</h3>
+      <p>Сеть выучила, как выглядит самолёт. Если её ответ сильно расходится с маской — <strong>или сеть ошиблась, или маска плохая</strong>. Начинайте смотреть с самого низкого IoU. Решает человек.</p>
+    </div>
+    <div class="cols" style="grid-template-rows:repeat(4,auto);gap:8px" id="hw1"></div>
+  </div>
+</section>
+
+<!-- ======================= 22 · ДЗ 2 ======================= -->
+<section class="slide" id="s22" data-sec="Домашнее задание">
+  <div class="eyebrow">Домашнее задание LXP №2 · 2 балла</div>
+  <h1>«Вырезать самолёт и наложить на другой фон»</h1>
+  <div class="cols grow" style="grid-template-columns:1.2fr 1fr">
+    <div class="panel">
+      <canvas id="cutCv" width="560" height="315"></canvas>
+      <div class="rowbtn"><button id="cut0" class="on">1 · фото</button><button id="cut1">2 · альфа</button><button id="cut2">3 · прозрачный</button><button id="cut3">4 · на фон</button></div>
+      <div class="rowbtn bgpick"><span class="small dim">фон:</span><button id="bg0" class="on">закат</button><button id="bg1">ночь</button><button id="bg2">море</button></div>
+    </div>
+    <div class="panel">
+      <ul class="list">
+        <li>Альфа = <b>255</b> где самолёт, <b>0</b> где фон — это и есть маска × 255</li>
+        <li><code>photo.convert('RGBA')</code> → <code>.putalpha(альфа)</code> → сохранить <b>PNG</b> (JPG прозрачность теряет)</li>
+        <li><code>getbbox()</code> + <code>crop</code> — обрезать пустые края</li>
+        <li>Фон найдите сами; наложение — <code>bg.alpha_composite(plane, (x, y))</code></li>
+        <li>По желанию: маску берёт U-Net, а не датасет</li>
+      </ul>
+      <div class="kicker teal">Сдать: ссылку на ноутбук, <b>plane.png</b> и <b>result.png</b>. Подсказки — в ноутбуке под каждым шагом.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 23 · КВИЗ ======================= -->
+<section class="slide" id="s23" data-sec="Проверка себя">
+  <div class="eyebrow">Проверка себя</div>
+  <h1>Десять вопросов</h1>
+  <div class="qgrid grow" id="quiz1"></div>
+  <div class="rowbtn"><button id="quiz1check">Проверить</button><button id="quiz1reset">Сбросить</button><div class="verdict" id="quiz1v"></div></div>
+</section>
+
+<!-- ======================= 24 · ИТОГИ ======================= -->
+<section class="slide" id="s24" data-sec="Итоги">
+  <div class="eyebrow">Итоги</div>
+  <h1>Что теперь понятно</h1>
+  <div class="cols c3 grow stagger">
+    <div class="panel"><h3>Сегментация</h3><p>Классификация <strong>каждого пикселя</strong>. Ответ — маска того же размера, что фото.</p></div>
+    <div class="panel"><h3 class="t">U-Net</h3><p>Спуск понимает <strong>что</strong>, подъём возвращает <strong>где</strong>, мостики сохраняют <strong>края</strong>.</p></div>
+    <div class="panel"><h3 class="v">IoU</h3><p>Пересечение / объединение. Accuracy обманывает: фона всегда больше.</p></div>
+    <div class="panel"><h3>Размеры</h3><p>Каждый уровень — деление на 2. Сторона картинки кратна 2<sup>уровней</sup>.</p></div>
+    <div class="panel"><h3 class="r">Типичная ошибка</h3><p>Маска из JPG: только порог <code>&gt; 127</code>, не <code>== 255</code>.</p></div>
+    <div class="panel"><h3 class="t">Что дальше</h3><p>Два ДЗ из LXP в конце ноутбука: почистить базу и вырезать самолёт на новый фон.</p></div>
+  </div>
+</section>
+
+</div>
+<div id="bar" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--line-soft);z-index:7"><i style="display:block;height:100%;width:0;background:var(--amber);transition:width .3s"></i></div>
+<div id="nav" style="position:absolute;right:18px;bottom:12px;display:flex;gap:6px;z-index:8"><button id="prev" style="padding:3px 10px;font-family:var(--mono);font-size:12px" aria-label="Предыдущий слайд">←</button><button id="next" style="padding:3px 10px;font-family:var(--mono);font-size:12px" aria-label="Следующий слайд">→</button></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var fit = document.getElementById("fit");
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var barFill = document.querySelector("#bar i");
+  var cur = 0;
+  function resize() {
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    if (!(k > 0)) k = 1;
+    fit.style.transform = "scale(" + k + ")";
+    fit.style.left = ((window.innerWidth - 1280 * k) / 2) + "px";
+    fit.style.top = ((window.innerHeight - 720 * k) / 2) + "px";
+  }
+  window.addEventListener("resize", resize); resize();
+  slides.forEach(function (s, i) {
+    var f = document.createElement("div"); f.className = "foot";
+    f.innerHTML = "<span>" + (s.dataset.sec || "") + "</span><span>" + String(i + 1).padStart(2, "0") + " / " + String(slides.length).padStart(2, "0") + "</span>";
+    s.appendChild(f);
+  });
+  function show(i) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach(function (s, j) { s.classList.toggle("on", j === cur); });
+    barFill.style.width = ((cur + 1) / slides.length * 100) + "%";
+    slides[cur].dispatchEvent(new CustomEvent("shown"));
+    try { history.replaceState(null, "", "#s" + (cur + 1)); } catch (e) {}
+  }
+  document.getElementById("prev").onclick = function () { show(cur - 1); };
+  document.getElementById("next").onclick = function () { show(cur + 1); };
+  document.addEventListener("keydown", function (e) {
+    var t = e.target && e.target.tagName;
+    if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT") return;
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { show(cur + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { show(cur - 1); e.preventDefault(); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+    else if (e.key === "f" || e.key === "F" || e.key === "а" || e.key === "А") {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    }
+  });
+
+  /* ---------- помощники ---------- */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function R(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function cv(id) { var c = $(id), w = c.width, h = c.height; c.style.width = w + "px"; c.style.height = h + "px"; c.width = w * 2; c.height = h * 2; var x = c.getContext("2d"); x.scale(2, 2); x.W = w; x.H = h; return x; }
+  function loop(slide, fn) {
+    var raf = null;
+    function tick(ts) { if (!slide.classList.contains("on")) { raf = null; return; } fn(ts); raf = requestAnimationFrame(tick); }
+    slide.addEventListener("shown", function () { if (!raf) raf = requestAnimationFrame(tick); });
+  }
+  function evPos(e, canvas) { var r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * parseFloat(canvas.style.width) / r.width, y: (e.clientY - r.top) * parseFloat(canvas.style.height) / r.height }; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  var C = { amber: "#e0913f", amberHi: "#f4ac5c", teal: "#54b6a4", rose: "#d4705f", violet: "#9a8ac9", text: "#e7edf4", dim: "#9dafc2", faint: "#6b8099", line: "#2b3d52", soft: "#223244", surface: "#182432", deep: "#0c141c" };
+  function font(px, mono) { return px + "px " + (mono === false ? "'IBM Plex Sans', sans-serif" : "'IBM Plex Mono', monospace"); }
+  function hl(line) {
+    var out = "", re = /(#.*$)|(f?"[^"]*"|'[^']*')|\b(import|from|as|for|in|with|def|return|True|False|None|if|else|not|and|or)\b|\b(\d+\.?\d*)\b/g, last = 0, m;
+    while ((m = re.exec(line))) { out += esc(line.slice(last, m.index)); var cls = m[1] ? "c" : m[2] ? "s" : m[3] ? "k" : "n"; out += '<span class="' + cls + '">' + esc(m[0]) + "</span>"; last = re.lastIndex; }
+    return out + esc(line.slice(last));
+  }
+  function codex(id, lines, onSel) {
+    var box = $(id), note = $(id + "Note"), els = [];
+    lines.forEach(function (L, i) {
+      var d = document.createElement("div"); d.className = "cl" + (L[1] ? " has" : "");
+      d.innerHTML = L[0] ? hl(L[0]) : " ";
+      if (L[1]) d.onclick = function () { sel(i); };
+      box.appendChild(d); els.push(d);
+    });
+    function sel(i) { els.forEach(function (e, j) { e.classList.toggle("sel", j === i); }); note.innerHTML = lines[i][1]; if (onSel) onSel(lines[i][2]); }
+    for (var i = 0; i < lines.length; i++) if (lines[i][1]) { sel(i); break; }
+  }
+
+  function quiz(cfg) {
+    var box = $(cfg.box), out = $(cfg.verdict), rows = [];
+    cfg.items.forEach(function (it) {
+      var row = document.createElement("div"); row.className = "qrow";
+      var txt = document.createElement("div"); txt.className = "txt"; txt.innerHTML = esc(it.t) + "<i class='why'></i>"; row.appendChild(txt);
+      var btns = [];
+      it.o.forEach(function (opt, k) {
+        var b = document.createElement("button"); b.className = "qbtn"; b.textContent = opt;
+        b.onclick = function () { row.dataset.pick = String(k); btns.forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); out.textContent = ""; out.className = "verdict"; };
+        btns.push(b); row.appendChild(b);
+      });
+      box.appendChild(row); rows.push({ row: row, it: it, btns: btns, why: txt.querySelector(".why") });
+    });
+    $(cfg.check).onclick = function () {
+      var empty = rows.filter(function (r) { return r.row.dataset.pick === undefined; }).length;
+      if (empty) { out.textContent = "Ответьте на все · осталось: " + empty; out.className = "verdict bad"; return; }
+      var ok = 0;
+      rows.forEach(function (r) { r.row.classList.remove("ok", "no"); if (Number(r.row.dataset.pick) === r.it.a) { r.row.classList.add("ok"); ok++; } else r.row.classList.add("no"); r.why.textContent = "Ответ: " + r.it.o[r.it.a] + " · " + r.it.w; r.why.classList.add("on"); });
+      out.textContent = "Верно " + ok + " из " + rows.length; out.className = "verdict " + (ok === rows.length ? "good" : "bad");
+    };
+    $(cfg.reset).onclick = function () { rows.forEach(function (r) { r.row.className = "qrow"; delete r.row.dataset.pick; r.btns.forEach(function (b) { b.classList.remove("on"); }); r.why.textContent = ""; r.why.classList.remove("on"); }); out.textContent = ""; out.className = "verdict"; };
+  }
+
+  
+  /* ================= рисование на canvas ================= */
+  function cap(ctx, t, x, y, col, size) { ctx.fillStyle = col || C.faint; ctx.font = font(size || 12); ctx.textAlign = "center"; ctx.fillText(t, x, y); }
+  function circle(ctx, x, y, r, fill, stroke) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); } }
+  function node(ctx, x, y, w, h, label, fill, stroke, col, size) {
+    ctx.fillStyle = fill || "#1f2e3f"; ctx.fillRect(x, y, w, h); ctx.strokeStyle = stroke || C.dim; ctx.strokeRect(x + .5, y + .5, w, h);
+    ctx.fillStyle = col || C.text; ctx.font = font(size || 12); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(label, x + w / 2, y + h / 2); ctx.textBaseline = "alphabetic";
+  }
+  function arrow(ctx, x1, y1, x2, y2, col) {
+    ctx.strokeStyle = col || C.line; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    var a = Math.atan2(y2 - y1, x2 - x1); ctx.fillStyle = col || C.line; ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 9 * Math.cos(a - .4), y2 - 9 * Math.sin(a - .4)); ctx.lineTo(x2 - 9 * Math.cos(a + .4), y2 - 9 * Math.sin(a + .4)); ctx.fill(); ctx.lineWidth = 1;
+  }
+
+  /* ================= интерактивные компоненты ================= */
+  /* разбор вызова: части [текст, пояснение|null] */
+  function anat(boxId, parts) {
+    var box = $(boxId), note = $(boxId + "Note"), spans = [];
+    parts.forEach(function (p, i) {
+      var s = document.createElement("span"); s.textContent = p[0];
+      if (p[1]) { s.className = "tk"; s.onclick = function () { sel(i); }; }
+      box.appendChild(s); spans.push(s);
+    });
+    function sel(i) {
+      spans.forEach(function (s, j) { s.classList.toggle("on", j === i); });
+      note.innerHTML = '<span class="lbl">' + esc(parts[i][0].replace(/[\s,]+/g, " ").replace(/^[\s,]+|[\s,]+$/g, "")) + "</span>" + parts[i][1];
+    }
+    for (var k = 0; k < parts.length; k++) if (parts[k][1]) { sel(k); break; }
+  }
+  /* разбор по строкам: строки [текст, пояснение|null]; возвращает {sel, next} */
+  function codeLines(boxId, rows, onStep) {
+    var box = $(boxId), note = $(boxId + "Note"), els = [];
+    rows.forEach(function (r, i) {
+      var d = document.createElement("span"); d.className = "ln"; d.textContent = r[0] || " ";
+      if (r[1]) d.onclick = function () { sel(i); };
+      box.appendChild(d); els.push(d);
+    });
+    function sel(i) { els.forEach(function (e, j) { e.classList.toggle("on", j === i); }); if (note) note.innerHTML = rows[i][1] || ""; if (onStep) onStep(i); }
+    sel(0);
+    return { sel: sel, next: function () { var c = els.findIndex(function (e) { return e.classList.contains("on"); }), n = c; do { n = (n + 1) % rows.length; } while (!rows[n][1] && n !== c); sel(n); } };
+  }
+  /* карточки заданий: [номер, заголовок, условие, ожидаемый вывод, подсказка] */
+  function steps(id, list) {
+    var box = $(id);
+    list.forEach(function (t) {
+      var d = document.createElement("div"); d.className = "step";
+      d.innerHTML = '<span class="num">ЗАДАНИЕ ' + t[0] + '</span><h4>' + esc(t[1]) + "</h4><p>" + esc(t[2]) + '</p><div class="exp">' + esc(t[3]) + '</div><div class="hint">Подсказка: ' + esc(t[4]) + "</div>";
+      box.appendChild(d);
+    });
+  }
+  /* кнопки «показать подсказки» для карточек заданий */
+  function wireHints() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-hint]"), function (b) {
+      b.onclick = function () {
+        var hints = $(b.dataset.hint).querySelectorAll(".hint"), on = !hints[0].classList.contains("on");
+        Array.prototype.forEach.call(hints, function (h) { h.classList.toggle("on", on); });
+        b.textContent = on ? "Скрыть подсказки" : "Показать подсказки";
+      };
+    });
+  }
+  /* расставить по порядку: items в правильном порядке, shuffled — порядок показа */
+  function order(cfg) {
+    var box = $(cfg.box), picks = [], els = [];
+    cfg.shuffled.forEach(function (i) {
+      var b = document.createElement("button"); b.className = "ostep";
+      b.innerHTML = '<span class="oi">·</span><span>' + esc(cfg.items[i]) + "</span><em></em>";
+      b.onclick = function () { if (b.dataset.n) return; picks.push(i); b.dataset.n = picks.length; b.querySelector(".oi").textContent = picks.length; b.classList.add("on"); $(cfg.verdict).textContent = ""; };
+      box.appendChild(b); els.push({ b: b, i: i });
+    });
+    $(cfg.check).onclick = function () {
+      if (picks.length < cfg.items.length) { $(cfg.verdict).textContent = "Расставьте все шаги · осталось: " + (cfg.items.length - picks.length); $(cfg.verdict).className = "verdict bad"; return; }
+      var ok = 0;
+      els.forEach(function (e) { var good = Number(e.b.dataset.n) - 1 === e.i; e.b.classList.remove("ok", "no"); e.b.classList.add(good ? "ok" : "no"); e.b.querySelector("em").textContent = good ? "" : "место " + (e.i + 1); if (good) ok++; });
+      $(cfg.verdict).textContent = "На своём месте " + ok + " из " + cfg.items.length;
+      $(cfg.verdict).className = "verdict " + (ok === cfg.items.length ? "good" : "bad");
+    };
+    $(cfg.reset).onclick = function () { picks = []; els.forEach(function (e) { delete e.b.dataset.n; e.b.className = "ostep"; e.b.querySelector(".oi").textContent = "·"; e.b.querySelector("em").textContent = ""; }); $(cfg.verdict).textContent = ""; };
+  }
+  /* поля для счёта руками: ответы проверяются только когда заполнены все */
+  function calc(cfg) {
+    var list;
+    function reset() { $(cfg.box).innerHTML = new Array(cfg.answers.length).fill('<input inputmode="decimal">').join(""); list = Array.prototype.slice.call($(cfg.box).querySelectorAll("input")); $(cfg.verdict).textContent = ""; }
+    $(cfg.check).onclick = function () {
+      var empty = list.filter(function (el) { return !el.value.trim(); }).length;
+      if (empty) { $(cfg.verdict).textContent = "Заполните все клетки · осталось: " + empty; $(cfg.verdict).className = "verdict bad"; return; }
+      var ok = 0;
+      list.forEach(function (el, i) { var good = Math.abs(Number(String(el.value).replace(",", ".")) - cfg.answers[i]) < 0.011; el.className = good ? "ok" : "no"; if (good) ok++; });
+      $(cfg.verdict).textContent = "Верно " + ok + " из " + list.length + (ok < list.length ? " · правильные ответы: " + cfg.answers.join(", ") : "");
+      $(cfg.verdict).className = "verdict " + (ok === list.length ? "good" : "bad");
+    };
+    $(cfg.reset).onclick = reset; reset();
+  }
+
+  /* ================= сегментация: общие рисунки ================= */
+  /* силуэт самолёта в коробке 200 × 80 */
+  var PLANE = new Path2D("M10 40 Q13 31 32 30 L148 30 L170 6 L186 6 L180 31 L190 34 L192 41 L172 45 L32 48 Q12 48 10 40 Z M84 44 L122 44 L78 74 L64 74 Z M88 26 L116 26 L96 12 L88 12 Z M162 40 L182 40 L196 50 L188 51 Z");
+  var probe = document.createElement("canvas").getContext("2d");
+  function inPlane(u, v) { return probe.isPointInPath(PLANE, u, v); }
+  function drawPlane(c, x, y, s, fill, flip) {
+    c.save(); c.translate(x, y); if (flip) { c.translate(200 * s, 0); c.scale(-s, s); } else c.scale(s, s);
+    c.fillStyle = fill; c.fill(PLANE); c.restore();
+  }
+  function sky(c, w, h, a, b) { var g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, a); g.addColorStop(1, b); c.fillStyle = g; c.fillRect(0, 0, w, h); }
+  function planePhoto(c, x, y, s, flip) { drawPlane(c, x, y, s, "#c9d2dc", flip); c.save(); c.globalAlpha = .35; drawPlane(c, x, y + 1.5 * s, s, "#6f7f92", flip); c.restore(); drawPlane(c, x, y, s * 1, "rgba(220,228,236,.85)", flip); }
+  function tabs(ids, fn) {
+    ids.forEach(function (id, i) { $(id).onclick = function () { ids.forEach(function (j) { $(j).classList.remove("on"); }); $(id).classList.add("on"); fn(i); }; });
+  }
+
+  /* 01 титул: сканирующая линия превращает фото в маску */
+  (function () {
+    var c = cv("tiCv"), t0 = null;
+    loop($("s1"), function (ts) {
+      if (t0 === null) t0 = ts; var t = ((ts - t0) / 4200) % 1, sx = Math.min(1, t * 1.4) * 460;
+      sky(c, 460, 300, "#2c4a6e", "#7fa3c4");
+      planePhoto(c, 30, 80, 2, false);
+      c.save(); c.beginPath(); c.rect(0, 0, sx, 300); c.clip();
+      c.fillStyle = "#0a0f15"; c.fillRect(0, 0, 460, 300); drawPlane(c, 30, 80, 2, C.rose, false); c.restore();
+      c.strokeStyle = C.amberHi; c.lineWidth = 2; c.beginPath(); c.moveTo(sx, 0); c.lineTo(sx, 300); c.stroke(); c.lineWidth = 1;
+      cap(c, "фото", 420, 20, C.text, 12); cap(c, "маска", 40, 20, sx > 60 ? C.amberHi : "transparent", 12);
+    });
+  })();
+
+  /* 02 разбор ДЗ */
+  (function () {
+    var ctl = codeLines("hwLines", [
+      ["IMG = 128", "Новый размер — <b>до</b> вызова <code>load_folder</code>, иначе массив останется 96 × 96."],
+      ["x_all, y_all, classes = load_folder('flowers', IMG)", "Перечитываем картинки в новом размере."],
+      ["idx = torch.randperm(len(x_all))", "<b>Сначала перемешать номера.</b> Картинки лежат по классам — без этого в проверку попадут одни тюльпаны."],
+      ["n_val = int(len(x_all) * 0.2)", "20 % — в проверку. <code>int</code>, потому что срез принимает только целое."],
+      ["x_train, y_train = x_all[idx[n_val:]], y_all[idx[n_val:]]", "Всё после первых <code>n_val</code> номеров — обучение."],
+      ["x_val, y_val = x_all[idx[:n_val]], y_all[idx[:n_val]]", "Первые <code>n_val</code> — проверка. Одни и те же номера для x и y — пары не перепутаются."],
+      ["train_loader = DataLoader(TensorDataset(x_train, y_train), ...)", "<b>Пересоздаём загрузчики</b>: старые держат картинки 96 × 96."],
+      ["nn.Linear(64 * 16 * 16, len(classes))", "128 → 64 → 32 → 16 после трёх MaxPool. Вход Linear = каналы × 16 × 16."]
+    ]);
+    $("hwStep").onclick = function () { ctl.next(); };
+  })();
+
+  /* 04 три задачи */
+  (function () {
+    var c = cv("taskCv"), mode = 0, t0 = 0;
+    var TERMS = [["Классификация", "Ответ на всю картинку: «самолёт, 97 %». Где он — неизвестно."],
+                 ["Детекция", "Прямоугольник (x, y, ширина, высота) + класс. Крылья и небо внутри рамки смешаны."],
+                 ["Сегментация", "Для каждого пикселя — свой ответ. Получаем точный силуэт: маску."]];
+    function term() { $("taskTerm").innerHTML = "<b>" + TERMS[mode][0] + "</b><span>" + TERMS[mode][1] + "</span>"; }
+    loop($("s4"), function (ts) {
+      var k = Math.min(1, (ts - t0) / 600);
+      sky(c, 640, 330, "#2c4a6e", "#87a9c7");
+      c.fillStyle = "rgba(255,255,255,.18)"; c.beginPath(); c.ellipse(500, 70, 70, 20, 0, 0, 7); c.fill();
+      planePhoto(c, 120, 110, 2, false);
+      if (mode === 0) { c.fillStyle = "rgba(12,20,28,.8)"; c.fillRect(20, 20, 230, 44); c.fillStyle = C.amberHi; c.font = font(18); c.textAlign = "left"; c.fillText("самолёт · 97 %", 36, 49); }
+      if (mode === 1) { c.strokeStyle = C.amberHi; c.lineWidth = 3; c.strokeRect(130, 115, 380 * k + 1, 145 * k + 1); c.lineWidth = 1; c.fillStyle = C.amberHi; c.fillRect(130, 92, 130, 23); c.fillStyle = C.deep; c.font = font(13); c.textAlign = "left"; c.fillText("самолёт 0.97", 136, 108); }
+      if (mode === 2) { c.save(); c.globalAlpha = .75 * k; drawPlane(c, 120, 110, 2, C.rose, false); c.restore(); }
+    });
+    tabs(["tk0", "tk1", "tk2"], function (i) { mode = i; t0 = performance.now(); term(); });
+    term();
+  })();
+
+  /* 05 маска-сетка */
+  (function () {
+    var COLS = 16, ROWS = 9, S = 25, c = cv("gridCv"), cell = [], truth = [];
+    for (var r = 0; r < ROWS; r++) for (var q = 0; q < COLS; q++) { truth.push(inPlane((q + .5) * 200 / COLS, 5 + (r + .5) * 72 / ROWS) ? 1 : 0); cell.push(0); }
+    function draw() {
+      c.clearRect(0, 0, 400, 225);
+      sky(c, 400, 225, "#2c4a6e", "#87a9c7"); planePhoto(c, 0, -14, 2, false);
+      for (var i = 0; i < cell.length; i++) {
+        var x = (i % COLS) * S, y = Math.floor(i / COLS) * S;
+        if (cell[i]) { c.fillStyle = "rgba(212,112,95,.78)"; c.fillRect(x, y, S, S); }
+        c.strokeStyle = "rgba(12,20,28,.45)"; c.strokeRect(x + .5, y + .5, S, S);
+      }
+      var s = "";
+      for (var rr = 0; rr < ROWS; rr++) { for (var qq = 0; qq < COLS; qq++) s += cell[rr * COLS + qq] ? "<b>1</b>" : "0"; s += "\n"; }
+      $("gridMx").innerHTML = s;
+      var hit = 0, tot = 0, pred = 0;
+      for (var j = 0; j < cell.length; j++) { hit += cell[j] && truth[j]; tot += truth[j]; pred += cell[j]; }
+      $("gridInfo").textContent = "покрашено " + pred + " · совпало с правильной " + hit + " из " + tot + " · IoU " + (pred + tot - hit ? (hit / (pred + tot - hit)).toFixed(2) : "—");
+    }
+    $("gridCv").onclick = function (e) { var p = evPos(e, $("gridCv")), i = Math.floor(p.y / S) * COLS + Math.floor(p.x / S); if (i >= 0 && i < cell.length) { cell[i] = 1 - cell[i]; draw(); } };
+    $("gridFill").onclick = function () { cell = truth.slice(); draw(); };
+    $("gridClear").onclick = function () { cell = cell.map(function () { return 0; }); draw(); };
+    $("s5").addEventListener("shown", draw);
+    draw();
+  })();
+
+  /* 06 виды сегментации */
+  (function () {
+    var c = cv("kindCv"), mode = 0;
+    var TERMS = [["Семантическая", "Каждому пикселю — класс. Все самолёты одного цвета: сеть не различает, где какой."],
+                 ["По экземплярам", "Каждый самолёт — отдельный объект со своим номером. Фон не размечен."],
+                 ["Паноптическая", "Обе сразу: каждый объект отдельно и каждый пиксель фона тоже размечен (небо, земля)."]];
+    var P = [[40, 60, 1.1, false], [300, 40, .9, true], [200, 170, 1.3, false]], COL = [C.rose, C.teal, C.violet];
+    function draw() {
+      c.clearRect(0, 0, 600, 300);
+      if (mode === 2) { c.fillStyle = "rgba(84,120,180,.35)"; c.fillRect(0, 0, 600, 250); c.fillStyle = "rgba(120,150,80,.4)"; c.fillRect(0, 250, 600, 50); cap(c, "небо", 560, 20, C.dim, 11); cap(c, "земля", 560, 280, C.dim, 11); }
+      else { sky(c, 600, 250, "#2c4a6e", "#87a9c7"); c.fillStyle = "#4a5a3a"; c.fillRect(0, 250, 600, 50); }
+      P.forEach(function (p, i) {
+        planePhoto(c, p[0], p[1], p[2], p[3]);
+        c.save(); c.globalAlpha = .82; drawPlane(c, p[0], p[1], p[2], mode === 0 ? C.rose : COL[i], p[3]); c.restore();
+        if (mode) cap(c, "самолёт " + (i + 1), p[0] + 100 * p[2], p[1] - 4, C.text, 11);
+      });
+      $("kindTerm").innerHTML = "<b>" + TERMS[mode][0] + "</b><span>" + TERMS[mode][1] + "</span>";
+    }
+    tabs(["kd0", "kd1", "kd2"], function (i) { mode = i; draw(); });
+    draw();
+  })();
+
+  /* 07 классификатор vs энкодер–декодер */
+  (function () {
+    var c = cv("edCv"), mode = 0, t0 = 0;
+    function box(x, h, col, lbl, on) { var y = 165 - h / 2; c.fillStyle = on ? col : "#16202c"; c.globalAlpha = on ? .35 : 1; c.fillRect(x, y, 34, h); c.globalAlpha = 1; c.strokeStyle = on ? col : C.line; c.strokeRect(x + .5, y + .5, 34, h); cap(c, lbl, x + 17, y + h + 16, on ? C.text : C.faint, 10); }
+    loop($("s7"), function (ts) {
+      var k = (ts - t0) / 260;
+      c.clearRect(0, 0, 700, 330);
+      var enc = [[30, 200, "144×256"], [100, 140, "72×128"], [170, 90, "36×64"], [240, 55, "18×32"]];
+      enc.forEach(function (e, i) { box(e[0], e[1], C.amber, e[2], k > i); if (i) arrow(c, e[0] - 32, 165, e[0] - 4, 165, k > i ? C.amberHi : C.line); });
+      if (mode === 0) {
+        arrow(c, 278, 165, 330, 165, k > 4 ? C.amberHi : C.line); node(c, 336, 150, 90, 30, "вектор", k > 4 ? "rgba(224,145,63,.25)" : "#16202c", k > 4 ? C.amberHi : C.line);
+        arrow(c, 430, 165, 480, 165, k > 5 ? C.amberHi : C.line); node(c, 486, 145, 170, 40, "«самолёт»", k > 5 ? "rgba(224,145,63,.25)" : "#16202c", k > 5 ? C.amberHi : C.line, 15);
+        cap(c, "ответ — одно слово. Где самолёт, уже не узнать", 350, 300, C.faint, 12);
+      } else {
+        var dec = [[330, 90, "36×64"], [400, 140, "72×128"], [470, 200, "144×256"]];
+        dec.forEach(function (d, i) { arrow(c, d[0] - 54 + (i ? 22 : 0), 165, d[0] - 4, 165, k > 4 + i ? C.teal : C.line); box(d[0], d[1], C.teal, d[2], k > 4 + i); });
+        arrow(c, 508, 165, 560, 165, k > 7 ? C.teal : C.line);
+        c.save(); c.translate(566, 120); c.fillStyle = C.deep; c.fillRect(0, 0, 112, 90); c.strokeStyle = k > 7 ? C.teal : C.line; c.strokeRect(.5, .5, 112, 90); if (k > 7) drawPlane(c, 6, 20, .5, C.rose, false); c.restore();
+        cap(c, "маска", 622, 228, k > 7 ? C.text : C.faint, 11);
+        cap(c, "энкодер (спуск)", 150, 40, C.amberHi, 12); cap(c, "декодер (подъём)", 430, 40, C.teal, 12);
+      }
+    });
+    tabs(["edA", "edB"], function (i) { mode = i; t0 = performance.now(); });
+    $("s7").addEventListener("shown", function () { t0 = performance.now(); });
+  })();
+
+  /* 08 схема U-Net */
+  (function () {
+    var c = cv("unetCv"), mode = 0;
+    var L = [["вход", "3 × 144 × 256"], ["enc1", "16 × 144 × 256"], ["enc2", "32 × 72 × 128"], ["enc3", "64 × 36 × 64"], ["дно", "128 × 18 × 32"], ["dec3", "64 × 36 × 64"], ["dec2", "32 × 72 × 128"], ["dec1", "16 × 144 × 256"], ["выход", "1 × 144 × 256"]];
+    var NOTES = [
+      "<span class='lbl'>СПУСК · ЭНКОДЕР</span>На каждом уровне — <b>conv_block</b> (две свёртки 3 × 3 + BatchNorm + ReLU), потом <b>MaxPool2d(2)</b>: картинка в 2 раза меньше. Каналов вдвое больше: 16 → 32 → 64.",
+      "<span class='lbl'>ДНО</span>Самая маленькая карта — 18 × 32, зато <b>128 каналов</b>. Каждый пиксель здесь «видит» большой кусок фото: сеть понимает, что это самолёт.",
+      "<span class='lbl'>ПОДЪЁМ · ДЕКОДЕР</span><b>ConvTranspose2d(…, 2, stride=2)</b> увеличивает в 2 раза: 18 × 32 → 36 × 64 → 72 × 128 → 144 × 256. В конце свёртка 1 × 1 оставляет <b>1 канал</b> — ответ для каждого пикселя.",
+      "<span class='lbl'>МОСТИКИ · SKIP CONNECTIONS</span>Карта со спуска того же размера <b>приклеивается</b> к подъёму: <code>torch.cat([up, e3], dim=1)</code>. 64 + 64 = <b>128 каналов</b> на входе dec3. Отсюда точные края."];
+    function draw() {
+      var W = 660, c0 = C.line;
+      c.clearRect(0, 0, W, 370);
+      /* [x, y, ширина, подпись, размер, группа] группа: 0 спуск, 1 дно, 2 подъём */
+      var B = [[70, 20, 16, "enc1", "16×144×256", 0], [150, 110, 22, "enc2", "32×72×128", 0], [230, 200, 28, "enc3", "64×36×64", 0],
+               [312, 280, 36, "дно", "128×18×32", 1],
+               [400, 200, 28, "dec3", "64×36×64", 2], [480, 110, 22, "dec2", "32×72×128", 2], [560, 20, 16, "dec1", "16×144×256", 2]];
+      var HH = 56;
+      function on(b) { return b[5] === mode || (mode === 3 && b[5] !== 1); }
+      /* мостики */
+      [[0, 6], [1, 5], [2, 4]].forEach(function (s) {
+        var a = B[s[0]], b = B[s[1]], y = a[1] + HH / 2, col = mode === 3 ? C.amberHi : "rgba(224,145,63,.3)";
+        c.setLineDash([6, 5]); arrow(c, a[0] + a[2] + 6, y, b[0] - 6, y, col); c.setLineDash([]);
+        if (mode === 3) cap(c, "torch.cat → " + (s[0] === 2 ? "128" : s[0] === 1 ? "64" : "32") + " каналов", (a[0] + b[0] + a[2]) / 2, y - 7, C.amberHi, 10);
+      });
+      /* спуск и подъём */
+      for (var i = 0; i < 3; i++) {
+        var a = B[i], b = B[i + 1];
+        arrow(c, a[0] + a[2] / 2, a[1] + HH + 26, b[0] + b[2] / 2 - 6, b[1] - 4, mode === 0 ? C.amberHi : c0);
+        var u = B[3 + i], v = B[4 + i];
+        arrow(c, u[0] + u[2] / 2 + 6, u[1] - 4, v[0] + v[2] / 2, v[1] + HH + 26, mode === 2 ? C.teal : c0);
+      }
+      B.forEach(function (b) {
+        var col = [C.amber, C.violet, C.teal][b[5]], o = on(b);
+        c.fillStyle = o ? col : "#16202c"; c.globalAlpha = o ? .4 : 1; c.fillRect(b[0], b[1], b[2], HH); c.globalAlpha = 1;
+        c.strokeStyle = o ? col : C.line; c.strokeRect(b[0] + .5, b[1] + .5, b[2], HH);
+        cap(c, b[3], b[0] + b[2] / 2, b[1] + HH + 13, o ? C.text : C.faint, 11);
+        cap(c, b[4], b[0] + b[2] / 2, b[1] + HH + 25, o ? C.dim : C.faint, 9.5);
+      });
+      /* вход и выход */
+      node(c, 6, 32, 44, 32, "фото", "#16202c", C.line, C.dim, 10); arrow(c, 50, 48, 66, 48, C.line);
+      node(c, 606, 32, 48, 32, "маска", mode === 2 ? "rgba(84,182,164,.25)" : "#16202c", mode === 2 ? C.teal : C.line, C.dim, 10); arrow(c, 578, 48, 604, 48, mode === 2 ? C.teal : C.line);
+      cap(c, "MaxPool2d(2) ↓", 120, 240, mode === 0 ? C.amberHi : C.faint, 11);
+      cap(c, "↑ ConvTranspose2d", 560, 240, mode === 2 ? C.teal : C.faint, 11);
+      $("unetNote").innerHTML = NOTES[mode];
+    }
+    tabs(["un0", "un1", "un2", "un3"], function (i) { mode = i; draw(); });
+    draw();
+  })();
+
+  /* 09 маска на разных уровнях */
+  (function () {
+    var c = cv("resCv"), RES = [[32, 18], [64, 36], [128, 72], [256, 144]];
+    function draw() {
+      var r = RES[Number($("resR").value)], cw = 600 / r[0], ch = 300 / r[1];
+      c.fillStyle = C.deep; c.fillRect(0, 0, 600, 300); c.fillStyle = C.rose;
+      for (var y = 0; y < r[1]; y++) for (var x = 0; x < r[0]; x++)
+        if (inPlane(5 + (x + .5) / r[0] * 190, -10 + (y + .5) / r[1] * 100)) c.fillRect(x * cw, y * ch, cw + .4, ch + .4);
+      c.save(); c.strokeStyle = "rgba(231,237,244,.55)"; c.lineWidth = 1; c.translate(-15.8, 30); c.scale(600 / 190, 600 / 190); c.lineWidth = .3; c.stroke(PLANE); c.restore();
+      $("resV").textContent = r[0] + "×" + r[1];
+    }
+    $("resR").oninput = draw; draw();
+  })();
+
+  /* 10 счёт руками */
+  calc({ box: "calc1", check: "calc1check", reset: "calc1reset", verdict: "calc1v", answers: [72, 128, 36, 64, 18, 32, 128, 8] });
+
+  /* 11 мини-схемы архитектур */
+  (function () {
+    function bar(c, x, y, w, h, col) { c.fillStyle = col; c.globalAlpha = .35; c.fillRect(x, y, w, h); c.globalAlpha = 1; c.strokeStyle = col; c.strokeRect(x + .5, y + .5, w, h); }
+    var a = cv("ar0"); [[10, 20, 80], [45, 35, 50], [80, 45, 30], [115, 52, 16]].forEach(function (b) { bar(a, b[0], b[1], 22, b[2], C.amber); }); arrow(a, 142, 60, 200, 60, C.amberHi); bar(a, 205, 20, 30, 80, C.teal); cap(a, "×32 сразу", 172, 50, C.faint, 10);
+    var u = cv("ar1"); [[10, 10, 50], [50, 40, 34], [90, 66, 22], [130, 66, 22], [170, 40, 34], [210, 10, 50]].forEach(function (b, i) { bar(u, b[0], b[1], 22, b[2], i < 3 ? C.amber : C.teal); });
+    u.setLineDash([4, 4]); arrow(u, 34, 30, 208, 30, C.amberHi); arrow(u, 74, 56, 168, 56, C.amberHi); u.setLineDash([]);
+    var p = cv("ar2"); [[10, 10, 50], [50, 40, 34], [90, 66, 22], [210, 10, 50]].forEach(function (b, i) { bar(p, b[0], b[1], 22, b[2], i < 3 ? C.amber : C.teal); });
+    [[90, 22], [130, 22], [170, 22], [130, 50], [170, 50]].forEach(function (b) { circle(p, b[0], b[1], 7, "rgba(154,138,201,.4)", C.violet); });
+    arrow(p, 34, 22, 82, 22, C.violet); arrow(p, 178, 22, 206, 22, C.violet); arrow(p, 74, 50, 122, 50, C.violet);
+    var s = cv("ar3"); bar(s, 10, 20, 40, 80, C.amber); [[1, 8], [2, 4], [3, 2], [6, 1]].forEach(function (g, i) {
+      var y = 8 + i * 28; for (var k = 0; k < g[0]; k++) for (var m = 0; m < g[0]; m++) { s.strokeStyle = C.rose; s.strokeRect(80 + k * 22 / g[0], y + m * 22 / g[0], 22 / g[0], 22 / g[0]); }
+      arrow(s, 52, 60, 78, y + 11, C.line); arrow(s, 104, y + 11, 170, 60, C.line); });
+    bar(s, 172, 20, 40, 80, C.teal); cap(s, "склейка", 192, 114, C.faint, 10);
+  })();
+
+  /* 12 IoU */
+  (function () {
+    var c = cv("iouCv"), SH = Number("0.127");
+    function draw() {
+      var sh = Number($("iouS").value), z = Number($("iouZ").value) / 100;
+      c.fillStyle = C.deep; c.fillRect(0, 0, 580, 250);
+      var tx = 200, ty = 60, tw = 180, th = 130, pw = tw * z, ph = th * z, px = tx + sh + (tw - pw) / 2, py = ty + (th - ph) / 2;
+      c.fillStyle = "rgba(84,182,164,.35)"; c.fillRect(tx, ty, tw, th); c.strokeStyle = C.teal; c.strokeRect(tx, ty, tw, th);
+      c.fillStyle = "rgba(224,145,63,.3)"; c.fillRect(px, py, pw, ph); c.strokeStyle = C.amberHi; c.strokeRect(px, py, pw, ph);
+      var ix = Math.max(0, Math.min(tx + tw, px + pw) - Math.max(tx, px)), iy = Math.max(0, Math.min(ty + th, py + ph) - Math.max(ty, py));
+      var inter = ix * iy, union = tw * th + pw * ph - inter, total = 580 * 250, tn = total - union;
+      if (inter > 0) { c.fillStyle = "rgba(244,172,92,.55)"; c.fillRect(Math.max(tx, px), Math.max(ty, py), ix, iy); }
+      cap(c, "правда", tx + 30, ty - 8, C.teal, 11); cap(c, "сеть", px + pw - 20, py + ph + 15, C.amberHi, 11);
+      var acc = (inter + tn) / total;
+      $("iouOut").innerHTML = "пересечение   <b>" + Math.round(inter) + "</b> пикс.\nобъединение   <b>" + Math.round(union) + "</b> пикс.\nIoU           <b>" + (inter / union).toFixed(2) + "</b>\naccuracy      <b>" + (acc * 100).toFixed(1) + " %</b>  ← почти всегда высокая";
+      $("iouSv").textContent = sh; $("iouZv").textContent = Math.round(z * 100) + "%";
+    }
+    $("iouS").oninput = draw; $("iouZ").oninput = draw; draw();
+  })();
+
+  /* 14 код U-Net */
+  codex("unetCode", [
+    ["def conv_block(cin, cout):", "<b>Строительный блок</b>: две свёртки 3 × 3 подряд. Используется на каждом уровне — и на спуске, и на подъёме."],
+    ["    return nn.Sequential(", null],
+    ["        nn.Conv2d(cin, cout, 3, padding=1), nn.BatchNorm2d(cout), nn.ReLU(),", "<code>padding=1</code> — размер не меняется. <b>BatchNorm</b> выравнивает числа между слоями, учится быстрее."],
+    ["        nn.Conv2d(cout, cout, 3, padding=1), nn.BatchNorm2d(cout), nn.ReLU())", null],
+    ["class UNet(nn.Module):", "Модель-класс: в <code>__init__</code> создаём слои, в <code>forward</code> описываем, как по ним идут данные. Так можно сделать мостики — в <code>nn.Sequential</code> нельзя."],
+    ["    def __init__(self):", null],
+    ["        super().__init__()", null],
+    ["        self.enc1 = conv_block(3, 16)", "<b>Спуск</b>: 3 канала фото → 16 → 32 → 64."],
+    ["        self.enc2 = conv_block(16, 32)", null],
+    ["        self.enc3 = conv_block(32, 64)", null],
+    ["        self.pool = nn.MaxPool2d(2)", "Один слой пулинга на всех: параметров у него нет."],
+    ["        self.bottom = conv_block(64, 128)", "<b>Дно</b>: 128 каналов, 18 × 32."],
+    ["        self.up3 = nn.ConvTranspose2d(128, 64, 2, stride=2)", "<b>Увеличение в 2 раза</b> и уменьшение каналов 128 → 64."],
+    ["        self.dec3 = conv_block(128, 64)", "Вход <b>128</b>, а не 64: 64 от <code>up3</code> + 64 от мостика <code>e3</code>."],
+    ["        ...  # up2/dec2, up1/dec1 — так же", null],
+    ["        self.out = nn.Conv2d(16, 1, 1)", "Свёртка 1 × 1: из 16 каналов — <b>1 число на пиксель</b>. Без sigmoid: её делает BCEWithLogitsLoss."],
+    ["", null],
+    ["    def forward(self, x):", null],
+    ["        e1 = self.enc1(x)", "Запоминаем выход каждого уровня спуска — это будущие мостики."],
+    ["        e2 = self.enc2(self.pool(e1))", null],
+    ["        e3 = self.enc3(self.pool(e2))", null],
+    ["        b = self.bottom(self.pool(e3))", null],
+    ["        d3 = self.dec3(torch.cat([self.up3(b), e3], dim=1))", "<b>Мостик</b>: увеличили дно и приклеили <code>e3</code> по оси каналов (<code>dim=1</code>)."],
+    ["        d2 = self.dec2(torch.cat([self.up2(d3), e2], dim=1))", null],
+    ["        d1 = self.dec1(torch.cat([self.up1(d2), e1], dim=1))", null],
+    ["        return self.out(d1)", "Выход: <code>(N, 1, 144, 256)</code> — маска того же размера, что фото."]
+  ]);
+
+  /* 18 порядок */
+  order({
+    box: "ord1", check: "ord1check", reset: "ord1reset", verdict: "ord1v",
+    items: ["скачать архив и посмотреть пару «фото + маска»",
+            "превратить маску в 0/1 порогом «красный > 127»",
+            "уменьшить всё до 256 × 144 и собрать x_all, y_all",
+            "перемешать и разделить на обучение и проверку",
+            "собрать U-Net и проверить форму выхода",
+            "обучить с BCEWithLogitsLoss, следить за IoU",
+            "загрузить лучшие веса и посмотреть худшие предсказания"],
+    shuffled: [4, 1, 6, 0, 3, 5, 2]
+  });
+
+  /* 19–20 карточки практики */
+  steps("pr1", [
+    ["1.1", "Наложить маску на фото", "Функция overlay(i, alpha): в пикселях самолёта смешать фото с красным. Показать номера 1, 2, 3.", "три фото, самолёт подкрашен,\nфон не изменился", "пиксели самолёта — red > 127; out[mask] = out[mask] * (1 - alpha) + [255, 0, 0] * alpha"],
+    ["2.1", "Сколько в датасете самолёта", "Посчитать долю пикселей-самолётов во всех масках и accuracy модели «всё фон».", "самолёт: 12.7 %\nточность «всё фон»: 87.3 %", "среднее значение y_all — это и есть доля единиц"],
+    ["3.1", "Проверить форму U-Net", "Создать модель и пропустить torch.zeros(2, 3, H, W) с show=True. Напечатать число параметров.", "выход (2, 1, 144, 256)\nпараметров: 483441", "sum(p.numel() for p in model.parameters())"]
+  ]);
+  steps("pr2", [
+    ["4.1", "Обучить 20 эпох", "Новая модель, пустой history, fit(model, 20, 1e-3, history, BEST), затем plot_history.", "20 строк, IoU растёт\n(примерно 0.75–0.85 к концу)", "BEST = SAVE_DIR + '/unet_planes.pt' — как веса на прошлом занятии"],
+    ["5.1", "Лучшие и худшие", "IoU для каждой проверочной картинки, среднее, show_pred для трёх худших и трёх лучших.", "среднее IoU — примерно 0.8\nхудшие — маленькие самолёты\nи кривые маски", "sorted(scores, key=scores.get) — номера от худшего к лучшему"],
+    ["ДЗ", "Подготовка к ДЗ", "Посмотрите на худшие картинки: где ошиблась сеть, а где неправильная сама маска?", "список номеров-подозреваемых", "сравните фото и правильную маску — совпадают ли они вообще"]
+  ]);
+  steps("hw1", [
+    ["Шаг 1", "Все наложения — в папку", "Для всех 1000 номеров overlay → уменьшить до 480 × 270 → check/0001.jpg…", "в папке check 1000 файлов", ""],
+    ["Шаг 2", "Листать по 20", "Функция show_sheet(numbers): сетка 4 × 5 с номерами.", "20 картинок с подписями", ""],
+    ["Шаг 3", "Подсказка от сети", "IoU сети против маски для всех 1000, показать 20 худших.", "20 номеров с самым низким IoU", ""],
+    ["Шаг 4", "Записать номера", "Список bad → файл bad.txt, по номеру в строке.", "bad.txt", ""]
+  ]);
+  wireHints();
+
+  /* 22 вырезка самолёта */
+  (function () {
+    var c = cv("cutCv"), mode = 0, bgk = 0, BG = [["#2a1e5a", "#f39a46"], ["#05070f", "#1d2a55"], ["#5aa7d6", "#0c4a6e"]];
+    function checker() { for (var y = 0; y < 315; y += 15) for (var x = 0; x < 560; x += 15) { c.fillStyle = (x + y) / 15 % 2 ? "#2a3646" : "#1c2633"; c.fillRect(x, y, 15, 15); } }
+    function draw() {
+      c.clearRect(0, 0, 560, 315);
+      if (mode === 0) { sky(c, 560, 315, "#2c4a6e", "#87a9c7"); planePhoto(c, 80, 110, 2, false); cap(c, "RGB · 3 канала", 480, 300, C.text, 11); }
+      if (mode === 1) { c.fillStyle = "#000"; c.fillRect(0, 0, 560, 315); drawPlane(c, 80, 110, 2, "#fff", false); cap(c, "альфа: 255 — самолёт, 0 — фон", 400, 300, C.amberHi, 11); }
+      if (mode === 2) { checker(); planePhoto(c, 80, 110, 2, false); cap(c, "RGBA · plane.png", 480, 300, C.text, 11); }
+      if (mode === 3) {
+        sky(c, 560, 315, BG[bgk][0], BG[bgk][1]);
+        if (bgk === 1) { var r = R(7); for (var i = 0; i < 70; i++) circle(c, r() * 560, r() * 200, r() * 1.4 + .3, "rgba(255,255,255,.8)"); }
+        if (bgk === 2) { c.fillStyle = "rgba(10,40,70,.6)"; c.fillRect(0, 230, 560, 85); }
+        planePhoto(c, 150, 90, 1.3, false); cap(c, "result.png · alpha_composite", 430, 300, C.text, 11);
+      }
+    }
+    tabs(["cut0", "cut1", "cut2", "cut3"], function (i) { mode = i; draw(); });
+    tabs(["bg0", "bg1", "bg2"], function (i) { bgk = i; mode = 3; ["cut0", "cut1", "cut2", "cut3"].forEach(function (j, k) { $(j).classList.toggle("on", k === 3); }); draw(); });
+    draw();
+  })();
+
+  /* 23 квиз */
+  quiz({ box: "quiz1", verdict: "quiz1v", check: "quiz1check", reset: "quiz1reset", items: [
+    { t: "Сегментация отвечает…", o: ["одним классом на фото", "рамкой вокруг объекта", "классом каждого пикселя"], a: 2, w: "на выходе — маска того же размера, что фото" },
+    { t: "Форма маски для фото (3, 144, 256) с одним классом", o: ["(1, 144, 256)", "(3, 144, 256)", "(1,)"], a: 0, w: "один канал: самолёт или нет" },
+    { t: "Что делает MaxPool2d(2) с картинкой 72 × 128?", o: ["144 × 256", "36 × 64", "72 × 128"], a: 1, w: "делит высоту и ширину на 2" },
+    { t: "Зачем в U-Net мостики (skip connections)?", o: ["меньше параметров", "передать детали краёв на подъём", "ускорить обучение"], a: 1, w: "на дне края размыты, со спуска они чёткие" },
+    { t: "torch.cat([up, e3], dim=1): каналы 64 и 64 дают", o: ["64", "128", "4096"], a: 1, w: "склейка по каналам складывает их число" },
+    { t: "Почему маску сравнивают с > 127, а не == 255?", o: ["JPG искажает значения", "так быстрее", "255 — это фон"], a: 0, w: "сжатие с потерями даёт 254, 250… на краях" },
+    { t: "Сеть отвечает «всё фон». Её IoU для самолёта", o: ["около 0.88", "0", "1"], a: 1, w: "пересечения нет — IoU ноль, хотя accuracy высокая" },
+    { t: "Высота 150 в нашей U-Net (3 уровня) приведёт к…", o: ["всё сработает", "ошибке размеров в torch.cat", "маске 150 × 256"], a: 1, w: "150 не делится на 8: 150→75→37→18, а обратно 36" },
+    { t: "В каком формате сохранять картинку с прозрачностью?", o: ["JPG", "PNG", "любом"], a: 1, w: "JPG не хранит альфа-канал" },
+    { t: "Аугментация flip в сегментации применяется к…", o: ["только фото", "только маске", "фото и маске одинаково"], a: 2, w: "иначе ответ не совпадёт с картинкой" }
+  ]});
+
+  var h = (location.hash || "").match(/^#s(\d+)$/);
+  show(h ? Number(h[1]) - 1 : 0);
+})();
+</script>
+</body>
+</html>
