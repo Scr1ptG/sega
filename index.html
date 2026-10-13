@@ -176,6 +176,15 @@ table.cmp{border-collapse:collapse;width:100%;font-size:14px}
 .pics img{width:100%;display:block;border:1px solid var(--line-soft)}
 .pics span{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center}
 .bgpick{display:flex;gap:6px}
+.fcard{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--teal);padding:10px 13px;display:flex;flex-direction:column;gap:6px;min-height:0;min-width:0;overflow:hidden}
+.fcard .num{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--teal)}
+.fcard h4{margin:0;font-family:var(--mono);font-size:15px;color:var(--amber-hi);font-weight:500}
+.fcard p{margin:0;font-size:13.5px;color:var(--dim);line-height:1.42}
+.fcard .exp{font-family:var(--mono);font-size:12px;color:#bcd3cb;background:#0a1118;border:1px solid var(--line-soft);border-left:3px solid var(--teal);padding:5px 8px;white-space:pre-wrap}
+.fcard .h1t{display:none;font-size:12.5px;color:#f0dcc4;line-height:1.4;border-top:1px dashed var(--line);padding-top:6px}
+.fcard .h1t b{color:var(--amber-hi)}
+.fcard pre{display:none;font-size:11.2px;line-height:1.42;padding:6px 8px;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere}
+.fcard .on{display:block}
 </style>
 
 <!-- ======================= 01 · ТИТУЛ ======================= -->
@@ -481,20 +490,205 @@ d1     (2, 16, 144, 256)
   <div class="rowbtn"><button id="ord1check">Проверить</button><button id="ord1reset">Сбросить</button><div class="verdict" id="ord1v"></div></div>
 </section>
 
-<!-- ======================= 19 · ПРАКТИКА 1–3 ======================= -->
-<section class="slide" id="s19" data-sec="Практика">
-  <div class="eyebrow">Практика · блоки 1–3 · разбираем вместе</div>
-  <h1>Данные и сеть</h1>
-  <div class="cols c3 grow" id="pr1"></div>
-  <div class="rowbtn"><button data-hint="pr1">Показать подсказки</button><span class="small dim">Ноутбук «segmentaciya-unet-colab», блоки 1–3.</span></div>
+<!-- ======================= ИНТУИЦИЯ · subplot ======================= -->
+<section class="slide" id="i1" data-sec="Интуиция функций">
+  <div class="eyebrow">Перед блоком 1 · как устроен plt.subplot</div>
+  <h1>subplot(строк, столбцов, номер клетки)</h1>
+  <div class="cols grow" style="grid-template-columns:1.2fr 1fr">
+    <div class="panel">
+      <canvas id="spCv" width="560" height="300"></canvas>
+      <div class="slrow"><span>строк</span><input type="range" id="spR" min="1" max="3" value="1"><span id="spRv"></span></div>
+      <div class="slrow"><span>столбцов</span><input type="range" id="spC" min="1" max="5" value="2"><span id="spCv2"></span></div>
+    </div>
+    <div class="panel">
+      <h3 class="t">Нажмите на клетку</h3>
+      <pre id="spCode" style="font-size:17px"></pre>
+      <ul class="list">
+        <li>Первые два числа — <b>сетка</b>: сколько строк и столбцов</li>
+        <li>Третье — <b>номер клетки</b>, в которую рисует следующий <code>imshow</code></li>
+        <li>Номера идут <b>с 1</b>, слева направо, потом вниз — как читаем текст</li>
+        <li>В цикле <code>enumerate</code> считает с 0 — поэтому <code>k + 1</code></li>
+      </ul>
+      <div class="rowbtn"><button id="spEx1">show_pair: 1 × 2</button><button id="spEx2">show_grid: 2 × 5</button></div>
+    </div>
+  </div>
 </section>
 
-<!-- ======================= 20 · ПРАКТИКА 4–5 ======================= -->
-<section class="slide" id="s20" data-sec="Практика">
-  <div class="eyebrow">Практика · блоки 4–5 · разбираем вместе</div>
-  <h1>Обучение и разбор ошибок сети</h1>
-  <div class="cols c3 grow" id="pr2"></div>
-  <div class="rowbtn"><button data-hint="pr2">Показать подсказки</button><span class="small dim">Ноутбук, блоки 4–5. Среда выполнения — T4 GPU.</span></div>
+<!-- ======================= ПРАКТИКА · p1 ======================= -->
+<section class="slide" id="p1" data-sec="Практика">
+  <div class="eyebrow">Практика · блок 1 · данные · пишем функции</div>
+  <h1>Открыть и показать</h1>
+  <div class="cols c3 grow" id="fp1"></div>
+  <div class="rowbtn"><button data-h1="fp1">Подсказка 1 · словами</button><button data-h2="fp1">Подсказка 2 · заготовка</button><span class="small dim">Задания 1.1–1.3. Проверка под каждой функцией уже написана — просто запускайте.</span></div>
+</section>
+
+<!-- ======================= ИНТУИЦИЯ · красный канал ======================= -->
+<section class="slide" id="i2" data-sec="Интуиция функций">
+  <div class="eyebrow">Перед заданием 1.4 · почему именно красный канал</div>
+  <h1>Маска нарисована красным — вся информация в канале R</h1>
+  <div class="cols grow" style="grid-template-columns:1.15fr 1fr">
+    <div class="panel">
+      <canvas id="rgbCv" width="520" height="260"></canvas>
+      <div class="rowbtn"><button id="ch3" class="on">RGB целиком</button><button id="ch0">канал R</button><button id="ch1">канал G</button><button id="ch2">канал B</button></div>
+    </div>
+    <div class="panel">
+      <div class="out">маска airplane_1 · настоящий запуск
+R (красный): максимум <b>255</b>, среднее <b>26.82</b>
+G (зелёный): максимум  32, среднее   0.08
+B (синий)  : максимум  35, среднее   0.10
+промежуточных R (1…254): <b>256 894</b> пикс.</div>
+      <h3>Край самолёта после JPG · порог <span style="color:var(--faint)">(значения схематичные)</span></h3>
+      <div class="cells" id="edgeCells"></div>
+      <div class="slrow"><span>порог</span><input type="range" id="thrR" min="0" max="255" value="127"><span id="thrV"></span></div>
+      <div class="kicker">Самолёт — где <b>R &gt; 127</b>. G и B почти везде 0 — по ним самолёт не отличить. <code>[:, :, 0]</code> — это канал R.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ИНТУИЦИЯ · overlay ======================= -->
+<section class="slide" id="i3" data-sec="Интуиция функций">
+  <div class="eyebrow">Перед заданием 1.5 · как работает overlay</div>
+  <h1>Подкрашиваем только пиксели самолёта</h1>
+  <div class="cols grow" style="grid-template-columns:1.2fr 1fr">
+    <div class="panel">
+      <canvas id="ovCv" width="540" height="260"></canvas>
+      <div class="slrow"><span>alpha</span><input type="range" id="ovA" min="0" max="100" value="50"><span id="ovAv"></span></div>
+      <div class="rowbtn"><button id="ovM0" class="on">out[mask] — только самолёт</button><button id="ovM1">ошибка: вся картинка</button></div>
+    </div>
+    <div class="panel">
+      <div class="formula">новый = фото · (1 − <em>alpha</em>) + <s>красный</s> · <em>alpha</em></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="cell" id="pxA" style="width:70px"></div><span class="readout">→</span><div class="cell" id="pxB" style="width:70px"></div>
+      </div>
+      <div class="out" id="ovOut"></div>
+      <ul class="list">
+        <li><code>out[mask]</code> — только пиксели, где в маске <b>True</b></li>
+        <li><code>float32</code>, иначе в <code>uint8</code> 250 + 10 = <b>4</b> (переполнение)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ПРАКТИКА · p2 ======================= -->
+<section class="slide" id="p2" data-sec="Практика">
+  <div class="eyebrow">Практика · блок 1 · маска · пишем функции</div>
+  <h1>Маска: из красного — в True / False, и наложение</h1>
+  <div class="cols c2 grow" id="fp2"></div>
+  <div class="rowbtn"><button data-h1="fp2">Подсказка 1 · словами</button><button data-h2="fp2">Подсказка 2 · заготовка</button><span class="small dim">Задания 1.4–1.5. Помним: JPG, поэтому порог > 127, а не == 255.</span></div>
+</section>
+
+<!-- ======================= ИНТУИЦИЯ · torchvision ======================= -->
+<section class="slide" id="i4" data-sec="Интуиция функций">
+  <div class="eyebrow">Перед заданием 2.2 · transform на torchvision</div>
+  <h1>Готовый конвейер: размер → тензор</h1>
+  <div class="cols grow" style="grid-template-columns:1.25fr 1fr">
+    <div class="panel">
+      <canvas id="tfCv" width="600" height="250"></canvas>
+      <div class="rowbtn"><button id="tfB">маска · BILINEAR (плохо)</button><button id="tfN" class="on">маска · NEAREST</button></div>
+      <p class="small dim">Справа внизу — увеличенный край маски после уменьшения. BILINEAR смешивает соседей → серые 0.3, 0.7. NEAREST берёт ближайший → только 0 и 1.</p>
+    </div>
+    <div class="panel">
+      <div class="pipbox" style="padding:8px 12px"><span class="cmd" style="font-size:15px">from torchvision import transforms as T</span><span class="what">Ставится <b>вместе с PyTorch</b>, отдельный pip не нужен.</span></div>
+      <div class="anat" id="tfAnat" style="font-size:14px;line-height:2"></div>
+      <div class="anatnote" id="tfAnatNote"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ИНТУИЦИЯ · albumentations ======================= -->
+<section class="slide" id="i5" data-sec="Интуиция функций">
+  <div class="eyebrow">Перед заданием 2.3 · аугментация на albumentations</div>
+  <h1>Одна случайность — на фото и на маску</h1>
+  <div class="cols grow" style="grid-template-columns:1.25fr 1fr">
+    <div class="panel">
+      <canvas id="alCv" width="600" height="250"></canvas>
+      <div class="rowbtn"><button id="alGo">aug(image=…, mask=…)</button><button id="alBad">ошибка: только image</button><button id="alReset">исходная</button></div>
+      <div class="verdict" id="alInfo"></div>
+    </div>
+    <div class="panel">
+      <div class="pipbox" style="padding:8px 12px"><span class="cmd" style="font-size:15px">pip install albumentations</span><span class="what">В Colab уже стоит. В коде: <b>import albumentations as A</b> — как на занятии про аугментацию.</span></div>
+      <pre style="font-size:12.5px">aug = A.Compose([
+    A.HorizontalFlip(p=<span class="n">0.5</span>),
+    A.RandomBrightnessContrast(p=<span class="n">0.5</span>),
+    A.Affine(rotate=(<span class="n">-10</span>, <span class="n">10</span>), scale=(<span class="n">0.9</span>, <span class="n">1.1</span>), p=<span class="n">0.5</span>),
+])
+r = aug(image=np.array(img), mask=np.array(mask))
+r[<span class="s">'image'</span>], r[<span class="s">'mask'</span>]   <span class="c"># словарь</span></pre>
+      <div class="kicker">Отражение и поворот — <b>и фото, и маске</b>. Яркость — только фото: маска это «ответ», а не цвет.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ПРАКТИКА · p3 ======================= -->
+<section class="slide" id="p3" data-sec="Практика">
+  <div class="eyebrow">Практика · блок 2 · transform и датасет · пишем функции</div>
+  <h1>Пара: загрузить, привести к формату, аугментировать</h1>
+  <div class="cols c3 grow" id="fp3"></div>
+  <div class="rowbtn"><button data-h1="fp3">Подсказка 1 · словами</button><button data-h2="fp3">Подсказка 2 · заготовка</button><span class="small dim">Задания 2.1–2.3: load_pair, transform на torchvision, augment на albumentations.</span></div>
+</section>
+
+<!-- ======================= ИНТУИЦИЯ · Dataset ======================= -->
+<section class="slide" id="i6" data-sec="Интуиция функций">
+  <div class="eyebrow">Перед заданием 2.4 · Dataset и DataLoader</div>
+  <h1>Dataset отдаёт одну пару, DataLoader собирает пачку</h1>
+  <div class="cols grow" style="grid-template-columns:1.45fr 1fr">
+    <div class="panel">
+      <canvas id="dsCv" width="660" height="330"></canvas>
+    </div>
+    <div class="panel">
+      <div class="term"><b>__len__</b><span>сколько пар в датасете — <code>len(self.ids)</code></span></div>
+      <div class="term"><b>__getitem__(k)</b><span>номер картинки — <code>self.ids[k]</code> → <code>load_pair</code> → (при обучении) <code>augment</code> → <code>transform</code></span></div>
+      <div class="term"><b>DataLoader</b><span>сам вызывает <code>__getitem__</code> 16 раз и склеивает в пачку <code>(16, 3, 144, 256)</code></span></div>
+      <div class="kicker teal">В памяти — только текущая пачка. Картинки читаются <b>с диска во время обучения</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ПРАКТИКА · p4 ======================= -->
+<section class="slide" id="p4" data-sec="Практика">
+  <div class="eyebrow">Практика · блоки 2–3 · датасет и сеть · пишем функции</div>
+  <h1>Датасет, деление и кирпич U-Net</h1>
+  <div class="cols c3 grow" id="fp4"></div>
+  <div class="rowbtn"><button data-h1="fp4">Подсказка 1 · словами</button><button data-h2="fp4">Подсказка 2 · заготовка</button><span class="small dim">Задания 2.4, 2.5, 3.1. Саму U-Net даю готовой — она из ваших conv_block.</span></div>
+</section>
+
+<!-- ======================= ИНТУИЦИЯ · эпоха ======================= -->
+<section class="slide" id="i7" data-sec="Интуиция функций">
+  <div class="eyebrow">Блок 4 · готовый код · эпоха обучения</div>
+  <h1>Пять шагов на каждую пачку</h1>
+  <div class="cols grow" style="grid-template-columns:1.15fr 1fr">
+    <div class="panel">
+      <div class="lines grow" id="epLines"></div>
+      <div class="rowbtn"><button id="epStep">Следующая строка</button></div>
+    </div>
+    <div class="panel">
+      <h3 class="t">Что делает строка</h3>
+      <div class="anatnote" id="epLinesNote" style="flex:none;min-height:120px"></div>
+      <div class="kicker">Блоки 4–5 в ноутбуке <b>уже написаны</b> — запускаем и разбираем. evaluate — тот же цикл, но <b>без шагов 3–5</b>: <code>model.eval()</code>, <code>torch.no_grad()</code>, только считаем ошибку и IoU.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ИНТУИЦИЯ · predict ======================= -->
+<section class="slide" id="i8" data-sec="Интуиция функций">
+  <div class="eyebrow">Блок 5 · готовый код · от выхода сети к маске</div>
+  <h1>Логит → вероятность → маска</h1>
+  <div class="cols grow" style="grid-template-columns:1.2fr 1fr">
+    <div class="panel">
+      <canvas id="prCv" width="560" height="260"></canvas>
+      <div class="slrow"><span>порог</span><input type="range" id="prT" min="5" max="95" value="50"><span id="prTv"></span></div>
+      <div class="rowbtn"><button id="prP" class="on">вероятности</button><button id="prM">маска (&gt; порога)</button></div>
+    </div>
+    <div class="panel">
+      <div class="out" id="prOut"></div>
+      <ul class="list">
+        <li>Сеть выдаёт <b>логит</b> — любое число. <code>torch.sigmoid</code> сжимает его в 0…1</li>
+        <li><code>unsqueeze(0)</code> — сеть ждёт <b>пачку</b>, даже из одной картинки</li>
+        <li><code>[0, 0]</code> — из <code>(1, 1, H, W)</code> достаём <code>(H, W)</code></li>
+        <li>Порог 0.5 ⇔ логит &gt; 0 — так считали IoU в <code>evaluate</code></li>
+      </ul>
+    </div>
+  </div>
 </section>
 
 <!-- ======================= 21 · ДЗ 1 ======================= -->
@@ -530,7 +724,7 @@ d1     (2, 16, 144, 256)
         <li>Фон найдите сами; наложение — <code>bg.alpha_composite(plane, (x, y))</code></li>
         <li>По желанию: маску берёт U-Net, а не датасет</li>
       </ul>
-      <div class="kicker teal">Сдать: ссылку на ноутбук, <b>plane.png</b> и <b>result.png</b>. Подсказки — в ноутбуке под каждым шагом.</div>
+      <div class="kicker teal">Сдать: ссылку на ноутбук, <b>plane.png</b> и <b>result.png</b>. Функции <b>cut_plane</b> и <b>paste_on_background</b> — в ноутбуке практики, с подсказками.</div>
     </div>
   </div>
 </section>
@@ -1033,22 +1227,89 @@ d1     (2, 16, 144, 256)
     shuffled: [4, 1, 6, 0, 3, 5, 2]
   });
 
-  /* 19–20 карточки практики */
-  steps("pr1", [
-    ["1.1", "Наложить маску на фото", "Функция overlay(i, alpha): в пикселях самолёта смешать фото с красным. Показать номера 1, 2, 3.", "три фото, самолёт подкрашен,\nфон не изменился", "пиксели самолёта — red > 127; out[mask] = out[mask] * (1 - alpha) + [255, 0, 0] * alpha"],
-    ["2.1", "Сколько в датасете самолёта", "Посчитать долю пикселей-самолётов во всех масках и accuracy модели «всё фон».", "самолёт: 12.7 %\nточность «всё фон»: 87.3 %", "среднее значение y_all — это и есть доля единиц"],
-    ["3.1", "Проверить форму U-Net", "Создать модель и пропустить torch.zeros(2, 3, H, W) с show=True. Напечатать число параметров.", "выход (2, 1, 144, 256)\nпараметров: 483441", "sum(p.numel() for p in model.parameters())"]
+  /* практика: карточки-функции с двумя уровнями подсказок
+     [номер, сигнатура, условие, ожидаемый вывод, подсказка словами, заготовка с ___] */
+  function fsteps(id, list) {
+    var box = $(id);
+    list.forEach(function (t) {
+      var d = document.createElement("div"); d.className = "fcard";
+      d.innerHTML = '<span class="num">ЗАДАНИЕ ' + t[0] + '</span><h4>' + esc(t[1]) + "</h4><p>" + t[2] + '</p><div class="exp">' + esc(t[3]) +
+        '</div><div class="h1t"><b>Подсказка:</b> ' + t[4] + "</div><pre>" + t[5].split("\n").map(hl).join("\n") + "</pre>";
+      box.appendChild(d);
+    });
+  }
+  function wireLevels() {
+    ["h1", "h2"].forEach(function (lv) {
+      Array.prototype.forEach.call(document.querySelectorAll("[data-" + lv + "]"), function (b) {
+        var label = b.textContent;
+        b.onclick = function () {
+          var els = $(b.dataset[lv]).querySelectorAll(lv === "h1" ? ".h1t" : "pre"), on = !els[0].classList.contains("on");
+          Array.prototype.forEach.call(els, function (e) { e.classList.toggle("on", on); });
+          b.classList.toggle("on", on); b.textContent = on ? "Скрыть" + label.replace(/^Подсказка/, "") : label;
+        };
+      });
+    });
+  }
+
+  fsteps("fp1", [
+    ["1.1", "photo_path(i), mask_path(i)", "Две функции собирают путь к фото и к маске номер <code>i</code>. Ничего не открывают — только строка.",
+     "airplans/airplane/airplane_1.jpg\nairplans/segment/airplane_1.jpg\nTrue True",
+     "f-строка: в <code>{ }</code> подставляется переменная. Папка датасета — в <code>ROOT</code>.",
+     "def photo_path(i):\n    return f'{ROOT}/airplane/airplane_{___}.jpg'\n\ndef mask_path(i):\n    return f'{ROOT}/___/airplane_{i}.jpg'"],
+    ["1.2", "show_photo(i)", "Открыть фото номер <code>i</code> и показать. В заголовке — номер и размер.",
+     "фото, заголовок «№ 1 · 1920×1080»",
+     "<code>Image.open</code>, размер — <code>img.size</code> (ширина, высота). Дальше <code>imshow</code>, <code>title</code>, <code>axis('off')</code>, <code>show</code>.",
+     "def show_photo(i):\n    img = Image.open(___)\n    w, h = img.___\n    plt.imshow(img)\n    plt.title(f'№ {i} · {w}×{h}')\n    plt.axis('off'); plt.show()"],
+    ["1.3", "show_pair(i)", "Слева фото, справа маска того же номера. Подписи «фото» и «маска».",
+     "две картинки в строку,\nна маске красный силуэт",
+     "Две картинки в строке — <code>plt.subplot(1, 2, 1)</code> и <code>plt.subplot(1, 2, 2)</code>. Пути — функции из 1.1.",
+     "def show_pair(i):\n    plt.figure(figsize=(12, 3.5))\n    plt.subplot(1, 2, ___)\n    plt.imshow(Image.open(photo_path(i)))\n    plt.subplot(1, 2, ___)\n    plt.imshow(Image.open(___))\n    plt.show()"]
   ]);
-  steps("pr2", [
-    ["4.1", "Обучить 20 эпох", "Новая модель, пустой history, fit(model, 20, 1e-3, history, BEST), затем plot_history.", "20 строк, IoU растёт\n(примерно 0.75–0.85 к концу)", "BEST = SAVE_DIR + '/unet_planes.pt' — как веса на прошлом занятии"],
-    ["5.1", "Лучшие и худшие", "IoU для каждой проверочной картинки, среднее, show_pred для трёх худших и трёх лучших.", "среднее IoU — примерно 0.8\nхудшие — маленькие самолёты\nи кривые маски", "sorted(scores, key=scores.get) — номера от худшего к лучшему"],
-    ["ДЗ", "Подготовка к ДЗ", "Посмотрите на худшие картинки: где ошиблась сеть, а где неправильная сама маска?", "список номеров-подозреваемых", "сравните фото и правильную маску — совпадают ли они вообще"]
+  fsteps("fp2", [
+    ["1.4", "mask_to_binary(i)", "Открыть маску и вернуть массив <code>True</code> (самолёт) / <code>False</code> (фон).",
+     "(1080, 1920) bool\nдоля самолёта ≈ 0.1",
+     "<code>.convert('RGB')</code> → <code>np.array</code> → красный канал <code>[:, :, 0]</code> → сравнить с 127.",
+     "def mask_to_binary(i):\n    mask = Image.open(mask_path(i)).convert(___)\n    red = np.array(mask)[:, :, ___]\n    return red > ___"],
+    ["1.5", "overlay(i, alpha=0.5)", "В пикселях самолёта смешать фото с красным: <code>фото·(1−alpha) + красный·alpha</code>.",
+     "самолёт подкрашен,\nфон не изменился",
+     "Фото в <code>float32</code>, маска из 1.4. <code>out[mask]</code> — только пиксели самолёта. В конце <code>.astype(np.uint8)</code>.",
+     "def overlay(i, alpha=0.5):\n    img = np.array(Image.open(photo_path(i)).convert('RGB'), dtype=np.float32)\n    mask = ___(i)\n    out = img.copy()\n    out[mask] = out[mask] * (1 - ___) + np.array([255, 0, 0]) * alpha\n    return out.astype(___)"]
   ]);
+  fsteps("fp3", [
+    ["2.1", "load_pair(i)", "Фото (PIL RGB, через <code>draft</code>) и маска (PIL L: 255 самолёт, 0 фон) <b>одного размера</b>.",
+     "(480, 270) RGB | (480, 270) L [0, 255]",
+     "<code>draft</code> читает JPG сразу уменьшенным — в разы быстрее. Маска — <code>mask_to_binary(i)</code> → <code>* 255</code> → <code>Image.fromarray</code>. Размер как у фото: <code>.resize(img.size, Image.NEAREST)</code>.",
+     "img = Image.open(photo_path(i))\nimg.draft('RGB', (W, H))  # JPG сразу уменьшенным — быстрее\nimg = img.convert(___)\nmask = Image.fromarray(mask_to_binary(i).astype(np.uint8) * ___)\nmask = mask.resize(img.___, Image.NEAREST)\nreturn img, mask"],
+    ["2.2", "photo_tf, mask_tf, transform", "Два конвейера <code>T.Compose</code>: размер → тензор. Для маски — <code>NEAREST</code>.",
+     "(3, 144, 256)  0 … 1\n(1, 144, 256)  [0.0, 1.0]",
+     "<code>T.Resize((H, W))</code> — высота первой. <code>T.ToTensor()</code> сам переставит оси и разделит на 255.",
+     "photo_tf = T.Compose([T.Resize((___, ___)), T.ToTensor()])\nmask_tf = T.Compose([T.Resize((H, W), interpolation=T.InterpolationMode.___), T.___()])\n\ndef transform(img, mask):\n    return photo_tf(___), mask_tf(mask)"],
+    ["2.3", "aug, augment(img, mask)", "<code>A.Compose</code>: отражение, яркость/контраст, <code>Affine</code> ±10° и масштаб 0.9…1.1. Фото и маска — <b>вместе</b>.",
+     "4 варианта одной пары,\nмаска всегда на самолёте",
+     "Вызов <code>aug(image=..., mask=...)</code> возвращает словарь. Туда — <code>np.array</code>, обратно — <code>Image.fromarray</code>.",
+     "aug = A.Compose([A.HorizontalFlip(p=___),\n    A.RandomBrightnessContrast(p=0.5),\n    A.Affine(rotate=(-10, 10), scale=(___, ___), p=0.5)])\n\ndef augment(img, mask):\n    r = aug(image=np.array(img), mask=np.array(___))\n    return Image.fromarray(r[___]), Image.fromarray(r['mask'])"]
+  ]);
+  fsteps("fp4", [
+    ["2.4", "class PlanesDataset", "<code>__getitem__(k)</code>: <code>load_pair(self.ids[k])</code> → при обучении <code>augment</code> → <code>transform</code>.",
+     "len(ds) → 3\nds[0] → (3,144,256) (1,144,256)",
+     "Номер картинки — <code>self.ids[k]</code>, а не <code>k</code>. Сначала augment (PIL), потом transform (тензор).",
+     "def __len__(self):\n    return len(___)\n\ndef __getitem__(self, k):\n    img, mask = load_pair(self.ids[___])\n    if self.train:\n        img, mask = ___(img, mask)\n    return ___(img, mask)"],
+    ["2.5", "split_ids(ids, val_share=0.15)", "Перемешать номера и разделить на <code>train_ids</code> и <code>val_ids</code> без пересечений.",
+     "850 150 0",
+     "Как на занятии про веса: <code>torch.randperm(len(ids)).tolist()</code>, первые <code>n_val</code> позиций — в проверку.",
+     "perm = torch.randperm(len(ids)).tolist()\nn_val = int(len(ids) * ___)\nval_ids = [ids[k] for k in perm[:___]]\ntrain_ids = [ids[k] for k in perm[___:]]\nreturn train_ids, val_ids"],
+    ["3.1", "conv_block(cin, cout)", "Кирпич U-Net: <code>Conv2d</code> → <code>BatchNorm2d</code> → <code>ReLU</code>, и ещё раз то же. Вернуть <code>nn.Sequential</code>.",
+     "conv_block(3, 16) на zeros(1,3,144,256)\n→ (1, 16, 144, 256)",
+     "У второй свёртки на входе уже <code>cout</code> каналов. <code>padding=1</code> сохраняет размер.",
+     "return nn.Sequential(\n    nn.Conv2d(___, cout, 3, padding=1),\n    nn.BatchNorm2d(cout), nn.ReLU(),\n    nn.Conv2d(cout, ___, 3, padding=1),\n    nn.BatchNorm2d(___), nn.ReLU())"]
+  ]);
+  wireLevels();
+
   steps("hw1", [
-    ["Шаг 1", "Все наложения — в папку", "Для всех 1000 номеров overlay → уменьшить до 480 × 270 → check/0001.jpg…", "в папке check 1000 файлов", ""],
-    ["Шаг 2", "Листать по 20", "Функция show_sheet(numbers): сетка 4 × 5 с номерами.", "20 картинок с подписями", ""],
-    ["Шаг 3", "Подсказка от сети", "IoU сети против маски для всех 1000, показать 20 худших.", "20 номеров с самым низким IoU", ""],
-    ["Шаг 4", "Записать номера", "Список bad → файл bad.txt, по номеру в строке.", "bad.txt", ""]
+    ["Д1.1", "save_overlays(numbers)", "overlay для всех 1000 → 480 × 270 → check/0001.jpg…", "1000 файлов в check", ""],
+    ["Д1.2", "Подсказка от сети", "worst_images(model, all_ids, n=30) → show_grid этих номеров", "30 подозреваемых", ""],
+    ["Д1.3", "Смотреть глазами", "show_grid(range(1, 21)), (21, 41)… — плохая маска или ошибка сети?", "решает человек", ""],
+    ["Д1.4", "save_bad(bad)", "Номера плохих масок → bad.txt, по номеру в строке", "bad.txt", ""]
   ]);
   wireHints();
 
@@ -1086,6 +1347,222 @@ d1     (2, 16, 144, 256)
     { t: "В каком формате сохранять картинку с прозрачностью?", o: ["JPG", "PNG", "любом"], a: 1, w: "JPG не хранит альфа-канал" },
     { t: "Аугментация flip в сегментации применяется к…", o: ["только фото", "только маске", "фото и маске одинаково"], a: 2, w: "иначе ответ не совпадёт с картинкой" }
   ]});
+
+  /* ================= интуиция функций ================= */
+  /* i1 · subplot */
+  (function () {
+    var c = cv("spCv"), sel = 1;
+    function draw() {
+      var rows = Number($("spR").value), cols = Number($("spC").value), gw = 540, gh = 280, cw = gw / cols, ch = gh / rows;
+      if (sel > rows * cols) sel = 1;
+      c.clearRect(0, 0, 560, 300);
+      for (var r = 0; r < rows; r++) for (var q = 0; q < cols; q++) {
+        var n = r * cols + q + 1, x = 10 + q * cw, y = 10 + r * ch, on = n === sel;
+        c.fillStyle = on ? "rgba(224,145,63,.25)" : "#16202c"; c.fillRect(x + 3, y + 3, cw - 6, ch - 6);
+        c.strokeStyle = on ? C.amberHi : C.line; c.strokeRect(x + 3.5, y + 3.5, cw - 7, ch - 7);
+        cap(c, String(n), x + cw / 2, y + ch / 2 + 8, on ? C.amberHi : C.dim, Math.min(30, ch / 3));
+      }
+      $("spRv").textContent = rows; $("spCv2").textContent = cols;
+      $("spCode").innerHTML = 'plt.subplot(<span class="n">' + rows + '</span>, <span class="n">' + cols + '</span>, <span class="n">' + sel + '</span>)<span class="c">  # строка ' +
+        (Math.floor((sel - 1) / cols) + 1) + ', столбец ' + ((sel - 1) % cols + 1) + '</span>';
+    }
+    $("spCv").onclick = function (e) {
+      var p = evPos(e, $("spCv")), rows = Number($("spR").value), cols = Number($("spC").value);
+      var q = Math.floor((p.x - 10) / (540 / cols)), r = Math.floor((p.y - 10) / (280 / rows));
+      if (q >= 0 && q < cols && r >= 0 && r < rows) { sel = r * cols + q + 1; draw(); }
+    };
+    $("spR").oninput = draw; $("spC").oninput = draw;
+    $("spEx1").onclick = function () { $("spR").value = 1; $("spC").value = 2; sel = 2; draw(); };
+    $("spEx2").onclick = function () { $("spR").value = 2; $("spC").value = 5; sel = 7; draw(); };
+    draw();
+  })();
+
+  /* i2 · каналы маски и порог */
+  (function () {
+    var c = cv("rgbCv"), mode = 3, EDGE = [0, 2, 9, 41, 96, 133, 188, 231, 252, 255];
+    function draw() {
+      c.fillStyle = "#000"; c.fillRect(0, 0, 520, 260);
+      var col = mode === 3 ? "#ff0000" : mode === 0 ? "#ffffff" : "#060606";
+      drawPlane(c, 50, 60, 2.1, col, false);
+      cap(c, ["канал R: самолёт 255 (белый), фон 0", "канал G: везде ≈ 0 — самолёта не видно", "канал B: везде ≈ 0 — самолёта не видно", "маска: (255, 0, 0) на (0, 0, 0)"][mode], 260, 245, mode === 1 || mode === 2 ? C.rose : C.dim, 12);
+    }
+    function cells() {
+      var t = Number($("thrR").value), box = $("edgeCells");
+      box.innerHTML = EDGE.map(function (v) {
+        var on = v > t;
+        return '<div class="cell" style="width:38px;height:40px;font-size:11px;flex-direction:column;display:flex;justify-content:center;background:rgb(' + v + ',0,0);border-color:' + (on ? C.teal : C.line) + '">' + v + '<b style="color:' + (on ? C.teal : C.faint) + '">' + (on ? "T" : "F") + "</b></div>";
+      }).join("");
+      $("thrV").textContent = t;
+    }
+    tabs(["ch3", "ch0", "ch1", "ch2"], function (i) { mode = [3, 0, 1, 2][i]; draw(); });
+    $("thrR").oninput = cells;
+    draw(); cells();
+  })();
+
+  /* i3 · overlay */
+  (function () {
+    var c = cv("ovCv"), bad = false;
+    function draw() {
+      var a = Number($("ovA").value) / 100;
+      sky(c, 540, 260, "#2c4a6e", "#87a9c7"); planePhoto(c, 60, 70, 2.1, false);
+      c.save(); c.globalAlpha = a; c.fillStyle = "#ff0000";
+      if (bad) c.fillRect(0, 0, 540, 260); else drawPlane(c, 60, 70, 2.1, "#ff0000", false);
+      c.restore();
+      var px = [100, 150, 200], out = px.map(function (v, k) { return v * (1 - a) + [255, 0, 0][k] * a; });
+      $("pxA").style.background = "rgb(" + px.join(",") + ")"; $("pxA").textContent = "";
+      $("pxB").style.background = "rgb(" + out.map(Math.round).join(",") + ")";
+      $("ovOut").innerHTML = "фото    [100, 150, 200]\nalpha   <b>" + a.toFixed(2) + "</b>\nновый   [<b>" + out.map(function (v) { return v.toFixed(1); }).join(", ") + "</b>]";
+      $("ovAv").textContent = a.toFixed(2);
+    }
+    $("ovA").oninput = draw;
+    tabs(["ovM0", "ovM1"], function (i) { bad = i === 1; draw(); });
+    draw();
+  })();
+
+  /* i4 · torchvision */
+  (function () {
+    var c = cv("tfCv"), nearest = true;
+    function draw() {
+      c.clearRect(0, 0, 600, 250);
+      var rows = [["фото PIL", "480×270 RGB", "Resize((144, 256))", "ToTensor()", "(3, 144, 256)", "0 … 1", C.amberHi],
+                  ["маска PIL", "480×270 L 0/255", "Resize(…, NEAREST)", "ToTensor()", "(1, 144, 256)", "0.0 / 1.0", C.teal]];
+      rows.forEach(function (r, i) {
+        var y = 14 + i * 64;
+        node(c, 4, y, 120, 44, r[0], "#16202c", C.line, C.text, 11); cap(c, r[1], 64, y + 58, C.faint, 10);
+        arrow(c, 126, y + 22, 148, y + 22, r[6]);
+        node(c, 150, y, 150, 44, r[2], "rgba(224,145,63,.12)", r[6], C.text, 11);
+        arrow(c, 302, y + 22, 324, y + 22, r[6]);
+        node(c, 326, y, 104, 44, r[3], "rgba(224,145,63,.12)", r[6], C.text, 11);
+        arrow(c, 432, y + 22, 454, y + 22, r[6]);
+        node(c, 456, y, 138, 44, r[4], "#16202c", r[6], r[6], 12); cap(c, r[5], 525, y + 58, C.faint, 10);
+      });
+      cap(c, "край маски, увеличено", 120, 160, C.dim, 11);
+      var N = 8, s = 10, x0 = 30, y0 = 168;
+      for (var yy = 0; yy < N; yy++) for (var xx = 0; xx < N; xx++) {
+        var d = (xx - yy * 0.7 - 2.2), v = nearest ? (d > 0 ? 1 : 0) : Math.max(0, Math.min(1, (d + 1) / 2));
+        c.fillStyle = "rgb(" + Math.round(v * 255) + "," + Math.round(v * 255) + "," + Math.round(v * 255) + ")"; c.fillRect(x0 + xx * s * 2, y0 + yy * s * 0.95, s * 2 - 1, s * 0.95 - 1);
+      }
+      c.textAlign = "left"; c.font = font(12);
+      c.fillStyle = nearest ? C.teal : C.rose;
+      c.fillText(nearest ? "NEAREST: только 0 и 1 ✔" : "BILINEAR: 0.3, 0.5, 0.8 ✘", 210, 186);
+      c.fillStyle = C.dim; c.fillText(nearest ? "маска осталась маской" : "в маске появились «полусамолёты»", 210, 206);
+      c.fillStyle = C.faint; c.fillText("T.Resize((H, W)) — высота первой;", 210, 230); c.fillText("у PIL .resize((W, H)) — наоборот", 210, 246);
+    }
+    tabs(["tfB", "tfN"], function (i) { nearest = i === 1; draw(); });
+    draw();
+    anat("tfAnat", [
+      ["photo_tf = ", null],
+      ["T.Compose([", "<b>Конвейер</b>: картинка проходит шаги по очереди. Вызывается как функция: <code>photo_tf(img)</code>."],
+      ["T.Resize((H, W))", "<b>Размер</b> 144 × 256. Внимание: кортеж <b>(высота, ширина)</b>. Для маски добавляем <code>interpolation=T.InterpolationMode.NEAREST</code>."],
+      [", ", null],
+      ["T.ToTensor()", "<b>PIL → тензор</b>: оси <code>(H, W, C)</code> → <code>(C, H, W)</code> и деление на 255. Маска 0/255 становится 0.0/1.0."],
+      ["])", null]
+    ]);
+  })();
+
+  /* i5 · albumentations */
+  (function () {
+    var c = cv("alCv"), st = { flip: false, ang: 0, sc: 1, br: 0, bad: false }, rnd = R(5);
+    function panel(x, isMask, s) {
+      c.save(); c.beginPath(); c.rect(x, 10, 285, 200); c.clip();
+      if (isMask) { c.fillStyle = "#000"; c.fillRect(x, 10, 285, 200); } else sky(c, 600, 220, "#2c4a6e", "#87a9c7");
+      c.translate(x + 142, 110); c.rotate(s.ang * Math.PI / 180); c.scale(s.sc * (s.flip ? -1 : 1), s.sc);
+      if (isMask) drawPlane(c, -120, -40, 1.2, "#ff3b3b", false); else planePhoto(c, -120, -40, 1.2, false);
+      c.restore();
+      if (!isMask && s.br) { c.fillStyle = s.br > 0 ? "rgba(255,255,255," + s.br + ")" : "rgba(0,0,0," + (-s.br) + ")"; c.fillRect(x, 10, 285, 200); }
+      c.strokeStyle = C.line; c.strokeRect(x + .5, 10.5, 285, 200);
+      cap(c, isMask ? "mask" : "image", x + 142, 232, C.dim, 12);
+    }
+    function draw() {
+      c.clearRect(0, 0, 600, 250);
+      panel(5, false, st);
+      panel(308, true, st.bad ? { flip: false, ang: 0, sc: 1 } : st);
+      $("alInfo").textContent = (st.bad ? "маска не изменилась — ответ больше не совпадает с фото ✘ · " : "") +
+        "flip: " + (st.flip ? "да" : "нет") + " · поворот " + st.ang.toFixed(0) + "° · масштаб " + st.sc.toFixed(2) + " · яркость " + (st.br >= 0 ? "+" : "") + Math.round(st.br * 100) + "%";
+      $("alInfo").className = "verdict " + (st.bad ? "bad" : "good");
+    }
+    function roll(bad) { st = { flip: rnd() < .5, ang: rnd() < .5 ? (rnd() * 20 - 10) : 0, sc: rnd() < .5 ? .9 + rnd() * .2 : 1, br: rnd() < .5 ? (rnd() * .5 - .25) : 0, bad: bad }; if (bad && !st.flip && !st.ang) st.flip = true; draw(); }
+    $("alGo").onclick = function () { roll(false); };
+    $("alBad").onclick = function () { roll(true); };
+    $("alReset").onclick = function () { st = { flip: false, ang: 0, sc: 1, br: 0, bad: false }; draw(); };
+    draw();
+  })();
+
+  /* i6 · Dataset и DataLoader */
+  (function () {
+    var c = cv("dsCv"), IDS = [17, 532, 88, 941, 3, 260, 777, 45, 610, 399, 128, 864, 501, 76, 333, 912];
+    loop($("i6"), function (ts) {
+      var t = ts / 650, k = Math.floor(t) % 18, f = t % 1;
+      c.clearRect(0, 0, 660, 330);
+      cap(c, "self.ids — номера картинок этого датасета", 330, 16, C.dim, 11);
+      IDS.forEach(function (id, i) {
+        var x = 10 + i * 40, on = i === k && k < 16;
+        node(c, x, 24, 36, 30, String(id), on ? "rgba(224,145,63,.3)" : i < k ? "#121a24" : "#16202c", on ? C.amberHi : C.line, on ? C.amberHi : i < k ? C.faint : C.text, 11);
+        cap(c, "k=" + i, x + 18, 68, on ? C.amberHi : "rgba(107,128,153,.5)", 9);
+      });
+      var steps = ["load_pair(" + (IDS[Math.min(k, 15)]) + ")", "augment (если train)", "transform"], on = k < 16;
+      steps.forEach(function (s, i) {
+        var x = 60 + i * 200, act = on && f > i * 0.25;
+        node(c, x, 110, 170, 40, s, act ? "rgba(84,182,164,.22)" : "#16202c", act ? C.teal : C.line, C.text, 12);
+        if (i < 2) arrow(c, x + 172, 130, x + 198, 130, act ? C.teal : C.line);
+      });
+      cap(c, "__getitem__(k) — одна пара (x, y)", 330, 172, C.teal, 12);
+      arrow(c, 330, 178, 330, 202, on ? C.teal : C.line);
+      cap(c, "DataLoader: пачка из 16", 330, 222, C.dim, 11);
+      for (var b = 0; b < 16; b++) {
+        var filled = b < k || (b === k && f > .8);
+        c.fillStyle = filled ? "rgba(224,145,63,.45)" : "#16202c"; c.fillRect(100 + b * 29, 232, 25, 36);
+        c.strokeStyle = filled ? C.amberHi : C.line; c.strokeRect(100.5 + b * 29, 232.5, 25, 36);
+      }
+      if (k >= 16) cap(c, "→ xb (16, 3, 144, 256), yb (16, 1, 144, 256) → в сеть", 330, 300, C.amberHi, 13);
+    });
+  })();
+
+  /* i7 · эпоха обучения */
+  (function () {
+    var ctl = codeLines("epLines", [
+      ["model.train()", "Режим обучения: Dropout и BatchNorm работают «по-учебному». В <code>evaluate</code> — <code>model.eval()</code>."],
+      ["for xb, yb in loader:", "DataLoader отдаёт пачки: <code>xb</code> — фото <code>(16, 3, 144, 256)</code>, <code>yb</code> — маски <code>(16, 1, 144, 256)</code>."],
+      ["    xb, yb = xb.to(device), yb.to(device)", "<b>Шаг 1.</b> Переносим пачку на GPU — туда же, где модель. Иначе ошибка «tensors on different devices»."],
+      ["    loss = loss_fn(model(xb), yb)", "<b>Шаг 2.</b> Ответ сети и ошибка: насколько маска сети не похожа на правильную, по всем пикселям."],
+      ["    opt.zero_grad()", "<b>Шаг 3.</b> Обнуляем старые градиенты — иначе PyTorch их <b>складывает</b> с прошлой пачкой."],
+      ["    loss.backward()", "<b>Шаг 4.</b> Считаем, куда сдвинуть каждый вес, чтобы ошибка уменьшилась."],
+      ["    opt.step()", "<b>Шаг 5.</b> Сдвигаем веса на шаг <code>lr</code>."],
+      ["    total += loss.item() * len(xb)", "Копим ошибку: <code>.item()</code> — число из тензора, умножаем на размер пачки (последняя бывает меньше)."],
+      ["return total / count", "Средняя ошибка за эпоху — по всем картинкам."]
+    ]);
+    $("epStep").onclick = function () { ctl.next(); };
+  })();
+
+  /* i8 · predict: логит → sigmoid → порог */
+  (function () {
+    var c = cv("prCv"), GW = 112, GH = 52, S = 5, P = [], mode = 0;
+    for (var y = 0; y < GH; y++) for (var x = 0; x < GW; x++) {
+      var u = x / GW * 200, v = y / GH * 92 - 6, n = 0, tot = 0;
+      for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++) { tot++; if (inPlane(u + dx * 1.8, v + dy * 1.8)) n++; }
+      var p = n / tot * 0.96 + 0.02, cloud = Math.exp(-(Math.pow((x - 96) / 9, 2) + Math.pow((y - 10) / 5, 2))) * 0.45;
+      P.push(Math.min(0.99, Math.max(p, cloud)));
+    }
+    function sig(z) { return 1 / (1 + Math.exp(-z)); }
+    function draw() {
+      var t = Number($("prT").value) / 100, cnt = 0;
+      c.fillStyle = "#000"; c.fillRect(0, 0, 560, 260);
+      for (var i = 0; i < P.length; i++) {
+        var x = (i % GW) * S, y = Math.floor(i / GW) * S, p = P[i];
+        if (p > t) cnt++;
+        if (mode === 0) { var g = Math.round(p * 255); c.fillStyle = "rgb(" + g + "," + g + "," + g + ")"; }
+        else c.fillStyle = p > t ? C.rose : "#000";
+        c.fillRect(x, y, S, S);
+      }
+      $("prTv").textContent = t.toFixed(2);
+      var L = [2.0, 0.3, -0.4, -3.0];
+      $("prOut").innerHTML = "логит   sigmoid   &gt; " + t.toFixed(2) + "?\n" + L.map(function (z) { var s = sig(z); return (z >= 0 ? " " : "") + z.toFixed(1) + "    " + s.toFixed(3) + "     " + (s > t ? "<b>самолёт</b>" : "фон"); }).join("\n") +
+        "\nпикселей-самолёта на карте: <b>" + cnt + "</b>";
+    }
+    $("prT").oninput = draw;
+    tabs(["prP", "prM"], function (i) { mode = i; draw(); });
+    draw();
+  })();
 
   var h = (location.hash || "").match(/^#s(\d+)$/);
   show(h ? Number(h[1]) - 1 : 0);
